@@ -1,4 +1,4 @@
-spreadsheet Package `go-vitotrol` provides access to the Viessmann™
+Package `go-vitotrol` provides access to the Viessmann™
 Vitotrol™ cloud API for controlloing/monitoring boilers.
 
 See https://www.viessmann.com/app_vitodata/VIIWebService-1.16.0.0/iPhoneWebService.asmx
@@ -18,9 +18,9 @@ Any pull-request is welcome.
 
 ## Example
 
-See cmd/vitotrol/main.go for an example.
+See `cmd/vitotrol/main.go` for an example.
 
-cmd/vitotrol/vitotrol usage follows:
+`cmd/vitotrol/vitotrol` usage follows:
 
 ```
 usage: ./cmd/vitotrol/vitotrol [OPTIONS] ACTION [PARAMS]
