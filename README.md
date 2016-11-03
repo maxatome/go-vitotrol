@@ -3,6 +3,7 @@ Vitotrol™ cloud API for controlloing/monitoring boilers.
 
 [![Build Status](https://travis-ci.org/maxatome/go-vitotrol.svg)](https://travis-ci.org/maxatome/go-vitotrol)
 [![Coverage Status](https://coveralls.io/repos/github/maxatome/go-vitotrol/badge.svg?branch=master)](https://coveralls.io/github/maxatome/go-vitotrol?branch=master)
+[![GoDoc](https://godoc.org/github.com/maxatome/go-vitotrol?status.svg)](https://godoc.org/github.com/maxatome/go-vitotrol)
 
 See https://www.viessmann.com/app_vitodata/VIIWebService-1.16.0.0/iPhoneWebService.asmx
 
