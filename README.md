@@ -1,5 +1,5 @@
 Package `go-vitotrol` provides access to the Viessmann™
-Vitotrol™ cloud API for controlloing/monitoring boilers.
+Vitotrol™ cloud API for controlling/monitoring boilers.
 
 [![Build Status](https://travis-ci.org/maxatome/go-vitotrol.svg)](https://travis-ci.org/maxatome/go-vitotrol)
 [![Coverage Status](https://coveralls.io/repos/github/maxatome/go-vitotrol/badge.svg?branch=master)](https://coveralls.io/github/maxatome/go-vitotrol?branch=master)
