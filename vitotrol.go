@@ -82,41 +82,9 @@ func (v *Session) sendRequest(soapAction string, reqBody string, respBody HasRes
 		resp.StatusCode, respBodyRaw, resp.Header)
 }
 
-/* Login
-POST /app_vitodata/VIIWebService-1.16.0.0/iPhoneWebService.asmx HTTP/1.1
-Content-Type: text/xml; charset=utf-8
-Connection: Keep-Alive
-Accept-Encoding: gzip
-
-<?xml version="1.0" encoding="UTF-8"?>
-<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://www.e-controlnet.de/services/vii/">
-  <soap:Body>
-    <Login>
-      <AppId>prod</AppId>
-      <AppVersion>4.3.1</AppVersion>
-      <Passwort>PASSWORD</Passwort>
-      <Betriebssystem>Android</Betriebssystem>
-      <Benutzer>LOGIN</Benutzer>
-    </Login>
-  </soap:Body>
-</soap:Envelope>
-
-<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <soap:Body>
-    <LoginResponse xmlns="http://www.e-controlnet.de/services/vii/">
-      <LoginResult>
-        <Ergebnis>0</Ergebnis>
-        <ErgebnisText>Kein Fehler</ErgebnisText>
-        <TechVersion>2.5.6.0</TechVersion>
-        <Anrede>1</Anrede>
-        <Vorname>Maxime</Vorname>
-        <Nachname>Soulé</Nachname>
-      </LoginResult>
-    </LoginResponse>
-  </soap:Body>
-</soap:Envelope>
-*/
+//
+// Login
+//
 
 type LoginResponse struct {
 	LoginResult LoginResult `xml:"Body>LoginResponse>LoginResult"`
@@ -158,50 +126,6 @@ func (v *Session) Login(login, password string) error {
 //
 // GetDevices
 //
-
-/*
-<?xml version="1.0" encoding="utf-8"?>
-<soap:Envelope>
-  <soap:Body>
-    <GetDevicesResponse xmlns="http://www.e-controlnet.de/services/vii/GetDevices">
-      <GetDevicesResult>
-        <Ergebnis>0</Ergebnis>
-        <ErgebnisText>Kein Fehler</ErgebnisText>
-        <AnlageListe>
-          <AnlageV2>
-            <AnlageId>15527</AnlageId>
-            <AnlageName>Houilles</AnlageName>
-            <AnlageStandort>Houilles</AnlageStandort>
-            <AnlageTyp />
-            <GeraeteListe>
-              <GeraetV2>
-                <GeraetId>40213</GeraetId>
-                <GeraetName>VT 200 (HO1C)</GeraetName>
-                <GeraetTyp>350</GeraetTyp>
-                <Heizkreise>
-                  <BenutzerHeizkreis>
-                    <HeizkreisId>19179</HeizkreisId>
-                    <HeizkreisBezeichnung>viessmann.eventtypegroupHC.name.VScotHO1_72~HC1</HeizkreisBezeichnung>
-                    <Benutzerfreigabe>true</Benutzerfreigabe>
-                  </BenutzerHeizkreis>
-                </Heizkreise>
-                <ViaFreigabe>true</ViaFreigabe>
-                <Regelungstype>GWG</Regelungstype>
-                <Regelungsadresse>VScotHO1_72</Regelungsadresse>
-                <HatFehler>false</HatFehler>
-                <IstVerbunden>true</IstVerbunden>
-              </GeraetV2>
-            </GeraeteListe>
-            <VerbindungsTyp />
-            <HatFehler>false</HatFehler>
-            <IstVerbunden>true</IstVerbunden>
-          </AnlageV2>
-        </AnlageListe>
-      </GetDevicesResult>
-    </GetDevicesResponse>
-  </soap:Body>
-</soap:Envelope>
-*/
 
 type GetDevicesDevices struct {
 	Id          uint32 `xml:"GeraetId"`
