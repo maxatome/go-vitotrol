@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -38,12 +39,14 @@ ACTION & PARAMS can be:
 	}
 
 	var login, password, config string
-	var verbose, debug bool
+	var verbose, debug, jsonOutput bool
 	flag.StringVar(&login, "login", "", "login on vitotrol API")
 	flag.StringVar(&password, "password", "", "password on vitotrol API")
 	flag.StringVar(&config, "config", "", "login+password config file")
 	flag.BoolVar(&verbose, "verbose", false, "print verbose information")
 	flag.BoolVar(&debug, "debug", false, "print debug information")
+	flag.BoolVar(&jsonOutput, "json", false,
+		"used by `timesheet' action to display timesheets using JSON format")
 
 	flag.Parse()
 
@@ -249,12 +252,17 @@ ACTION & PARAMS can be:
 				os.Exit(1)
 			}
 
-			fmt.Printf("%s\n", vitotrol.TimesheetsRef[tId])
 			ts := pDevice.Timesheets[tId]
-			for _, day := range []string{"mon", "tue", "wed", "thu", "fri", "sat", "sun"} {
-				fmt.Printf("- %s:\n", day)
-				for _, slot := range ts[day] {
-					fmt.Printf("  %s\n", &slot)
+			if jsonOutput {
+				buf, _ := json.Marshal(ts)
+				fmt.Println(string(buf))
+			} else {
+				fmt.Println(vitotrol.TimesheetsRef[tId])
+				for _, day := range []string{"mon", "tue", "wed", "thu", "fri", "sat", "sun"} {
+					fmt.Printf("- %s:\n", day)
+					for _, slot := range ts[day] {
+						fmt.Printf("  %s\n", &slot)
+					}
 				}
 			}
 		}
