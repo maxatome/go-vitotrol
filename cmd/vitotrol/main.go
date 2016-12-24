@@ -12,12 +12,13 @@ import (
 )
 
 var allowedActions = map[string]bool{
-	"errors":    true,
-	"get":       true,
-	"list":      true,
-	"rget":      true,
-	"set":       true,
-	"timesheet": true,
+	"errors":        true,
+	"get":           true,
+	"list":          true,
+	"rget":          true,
+	"set":           true,
+	"timesheet":     true,
+	"set_timesheet": true,
 }
 
 func main() {
@@ -34,7 +35,10 @@ ACTION & PARAMS can be:
                          on vitodata server
 - rget all             refresh than get all known attributes on vitodata server
 - set ATTR_NAME VALUE  set the value of attribute ATTR_NAME to VALUE
-- timesheet TIMESHEET  get the timesheet TIMESHEET data
+- timesheet TIMESHEET ...
+                       get the timesheet TIMESHEET data
+- set_timesheet TIMESHEET {"wday":[{"from":630,"to":2200},...],...}
+                       replace the whole timesheet TIMESHEET
 - errors               get the error history`)
 	}
 
@@ -129,7 +133,7 @@ ACTION & PARAMS can be:
 	}
 
 	if action != "errors" && len(params) == 0 {
-		fmt.Fprintln(os.Stderr, "*** PARAMS is missing!")
+		fmt.Fprintln(os.Stderr, "*** at least one PARAM is missing!")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -231,16 +235,38 @@ ACTION & PARAMS can be:
 			}
 		}
 
+	case "set_timesheet":
+		tId := mustExistTimesheetName(params[0])
+		if len(params) == 1 {
+			fmt.Fprintln(os.Stderr, "*** JSON definition of timesheet is missing!")
+			flag.Usage()
+			os.Exit(1)
+		}
+		tss := make(map[string]vitotrol.TimeslotSlice)
+		err := json.Unmarshal([]byte(params[1]), &tss)
+		if err != nil {
+			fmt.Fprintln(os.Stderr,
+				"*** JSON definition of timesheet is invalid:", err)
+			os.Exit(1)
+		}
+
+		v, pDevice := mustInitVitotrol(login, password, verbose, debug)
+
+		ch, err := pDevice.WriteTimesheetDataWait(v, tId, tss)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "WriteTimesheetData error:", err)
+			os.Exit(1)
+		}
+
+		if err = <-ch; err != nil {
+			fmt.Fprintln(os.Stderr, "WriteTimesheetData failed:", err)
+			os.Exit(1)
+		}
+
 	case "timesheet":
 		timesheetIds := make([]vitotrol.TimesheetId, len(params))
 		for idx, name := range params {
-			tId, ok := vitotrol.TimesheetsNames2Ids[name]
-			if !ok {
-				fmt.Fprintf(os.Stderr, "*** unknown timesheet `%s'\n", name)
-				flag.Usage()
-				os.Exit(1)
-			}
-			timesheetIds[idx] = tId
+			timesheetIds[idx] = mustExistTimesheetName(name)
 		}
 
 		v, pDevice := mustInitVitotrol(login, password, verbose, debug)
@@ -335,4 +361,14 @@ func mustCheckAttributeAccess(attrName string, reqAccess vitotrol.AttrAccess) vi
 		os.Exit(1)
 	}
 	return attrId
+}
+
+func mustExistTimesheetName(tsName string) vitotrol.TimesheetId {
+	tId, ok := vitotrol.TimesheetsNames2Ids[tsName]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "*** unknown timesheet `%s'\n", tsName)
+		flag.Usage()
+		os.Exit(1)
+	}
+	return tId
 }
