@@ -7,8 +7,8 @@ import (
 // Timeslot represents a time slot. Hours and minutes are packed on 16
 // bits by multiplying hours by 100 before adding them to minutes.
 type Timeslot struct {
-	From uint16
-	To   uint16
+	From uint16 `json:"from"`
+	To   uint16 `json:"to"`
 }
 
 // String returns a string representing the time slot.

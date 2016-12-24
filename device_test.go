@@ -19,6 +19,7 @@ var (
 		(*RefreshDataResponse)(nil),
 		(*GetErrorHistoryResponse)(nil),
 		(*GetTimesheetDataResponse)(nil),
+		(*WriteTimesheetDataResponse)(nil),
 	}
 
 	testTime = func() Time {
@@ -509,4 +510,104 @@ func TestGetTimesheetData(t *testing.T) {
 		// Response to reply
 		`<bad XML>`,
 		"GetTimesheetData with error")
+}
+
+//
+// WriteTimesheetData
+//
+
+func TestWriteTimesheetData(t *testing.T) {
+	assert := assert.New(t)
+
+	type requestDaySlot struct {
+		Day      string `xml:"Wochentag"`
+		From     string `xml:"ZeitVon"`
+		To       string `xml:"ZeitBis"`
+		Value    int    `xml:"Wert"`
+		Position int    `xml:"Position"`
+	}
+
+	type requestWriteTimesheetData struct {
+		requestDeviceCommon
+		Id       int              `xml:"DatenpunktId"`
+		Type     int              `xml:"SchaltzeitTyp"`
+		DaySlots []requestDaySlot `xml:"Schaltzeiten>Schaltzeit"`
+	}
+
+	// Be careful to SchaltsatzData nested layer
+	type requestBody struct {
+		WriteTimesheetData requestWriteTimesheetData `xml:"Body>WriteTimesheetData>SchaltsatzData"`
+	}
+
+	expectedRequest := &requestBody{
+		WriteTimesheetData: requestWriteTimesheetData{
+			requestDeviceCommon: deviceCommon,
+			Id:                  23,
+			Type:                1,
+			DaySlots: []requestDaySlot{
+				{Day: "MON", From: "0610", To: "0820", Value: 1, Position: 0},
+				{Day: "MON", From: "1610", To: "1820", Value: 1, Position: 1},
+				{Day: "TUE", From: "0610", To: "0820", Value: 1, Position: 0},
+				{Day: "WED", From: "0610", To: "0820", Value: 1, Position: 0},
+				{Day: "THU", From: "0610", To: "0820", Value: 1, Position: 0},
+				{Day: "FRI", From: "0610", To: "0820", Value: 1, Position: 0},
+				{Day: "SAT", From: "0610", To: "0820", Value: 1, Position: 0},
+				{Day: "SAT", From: "1610", To: "1820", Value: 1, Position: 1},
+				{Day: "SUN", From: "0610", To: "0820", Value: 1, Position: 0},
+			},
+		},
+	}
+
+	inputOK := map[string]TimeslotSlice{
+		"mon": {{From: 1610, To: 1820}, {From: 610, To: 820}},
+		"Tue": {{From: 610, To: 820}},
+		"weD": {{From: 610, To: 820}},
+		"tHu": {{From: 610, To: 820}},
+		"FRI": {{From: 610, To: 820}},
+		"sat": {{From: 1610, To: 1820}, {From: 610, To: 820}},
+		"sun": {{From: 610, To: 820}},
+	}
+
+	// No problem
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			id, err := d.WriteTimesheetData(v, 23, inputOK)
+			return assert.Equal("123456789", id) && assert.Nil(err)
+		},
+		// SOAP action
+		"WriteTimesheetData",
+		expectedRequest,
+		// Response to reply
+		`<Ergebnis>0</Ergebnis>
+<ErgebnisText>Kein Fehler</ErgebnisText>
+<AktualisierungsId>123456789</AktualisierungsId>`,
+		"WriteTimesheetData")
+
+	// Bad dayslot
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			id, err := d.WriteTimesheetData(v, 23, map[string]TimeslotSlice{
+				"foo": {{From: 1610, To: 1820}},
+			})
+			return assert.Empty(id) &&
+				assert.Error(err) &&
+				assert.Equal("Bad timesheet day `FOO'", err.Error())
+		},
+		"", nil, "", "WriteTimesheetData with bad day")
+
+	// Async error
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			id, err := d.WriteTimesheetData(v, 23, inputOK)
+			return assert.Empty(id) && assert.Error(err)
+		},
+		// SOAPAction
+		"WriteTimesheetData",
+		expectedRequest,
+		// Response to reply
+		`<bad XML>`,
+		"WriteTimesheetData with async error")
 }

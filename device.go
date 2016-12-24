@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -58,12 +59,16 @@ func (d *Device) FormatAttributes(attrs []AttrId) string {
 	return buf.String()
 }
 
-func (d *Device) sendRequest(v *Session, soapAction string, reqBody string, respBody HasResultHeader) error {
-	return v.sendRequest(soapAction, fmt.Sprintf(`<%s>
+func (d *Device) buildBody(soapAction string, reqBody string) string {
+	return fmt.Sprintf(`<%s>
 <GeraetId>%d</GeraetId>
 <AnlageId>%d</AnlageId>
 %s
-</%[1]s>`, soapAction, d.DeviceId, d.LocationId, reqBody), respBody)
+</%[1]s>`, soapAction, d.DeviceId, d.LocationId, reqBody)
+}
+
+func (d *Device) sendRequest(v *Session, soapAction string, reqBody string, respBody HasResultHeader) error {
+	return v.sendRequest(soapAction, d.buildBody(soapAction, reqBody), respBody)
 }
 
 //
@@ -397,4 +402,144 @@ func (d *Device) GetTimesheetData(v *Session, id TimesheetId) error {
 	d.Timesheets[id] = timesheet
 
 	return nil
+}
+
+//
+// WriteTimesheetData
+//
+
+type WriteTimesheetDataResponse struct {
+	WriteTimesheetDataResult WriteTimesheetDataResult `xml:"Body>WriteTimesheetDataResponse>WriteTimesheetDataResult"`
+}
+
+type WriteTimesheetDataResult struct {
+	ResultHeader
+	RefreshId string `xml:"AktualisierungsId"`
+}
+
+func (r *WriteTimesheetDataResponse) ResultHeader() *ResultHeader {
+	return &r.WriteTimesheetDataResult.ResultHeader
+}
+
+var timesheetDays = []string{
+	"MON",
+	"TUE",
+	"WED",
+	"THU",
+	"FRI",
+	"SAT",
+	"SUN",
+}
+var timesheetDaysSet = func() map[string]struct{} {
+	tss := make(map[string]struct{}, 7)
+	for _, day := range timesheetDays {
+		tss[day] = struct{}{}
+	}
+	return tss
+}()
+
+// WriteTimesheetData launches the Vitotrol™ WriteTimesheetData
+// request and returns the "refresh ID" sent back by the server. Does
+// not populate the internal cache before returning (Timesheets
+// field), use WriteTimesheetDataWait instead.
+func (d *Device) WriteTimesheetData(v *Session, id TimesheetId, data map[string]TimeslotSlice) (string, error) {
+	buf := bytes.NewBufferString(
+		`<SchaltzeitTyp>1</SchaltzeitTyp>` +
+			`<DatenpunktId>`)
+	buf.WriteString(strconv.Itoa(int(id)))
+	buf.WriteString(`</DatenpunktId>` +
+		`<Schaltzeiten>`)
+
+	preDays := make(map[string]*bytes.Buffer, 7)
+	for day, daySlots := range data {
+		day = strings.ToUpper(day)
+		_, ok := timesheetDaysSet[day]
+		if !ok {
+			return "", fmt.Errorf("Bad timesheet day `%s'", day)
+		}
+
+		sort.Sort(daySlots) // sort slots in place
+
+		tmpBuf := bytes.NewBuffer(nil)
+		preDays[day] = tmpBuf
+
+		for idx, slot := range daySlots {
+			tmpBuf.WriteString(fmt.Sprintf(
+				`<Schaltzeit>`+
+					`<Wochentag>%s</Wochentag>`+
+					`<ZeitVon>%04d</ZeitVon>`+
+					`<ZeitBis>%04d</ZeitBis>`+
+					`<Wert>1</Wert>`+
+					`<Position>%d</Position>`+
+					`</Schaltzeit>`,
+				day, slot.From, slot.To, idx))
+		}
+	}
+
+	// Write sorted days
+	for _, day := range timesheetDays {
+		tmpBuf := preDays[day]
+		if tmpBuf != nil {
+			buf.Write(tmpBuf.Bytes())
+		}
+	}
+
+	buf.WriteString(`</Schaltzeiten>`)
+
+	// Oddly, WriteTimesheetData has a nested layer SchaltsatzData
+	// before GeraetId and AnlageId fields, so use the
+	// Session.sendRequest method instead of Device.sendRequest
+	var resp WriteTimesheetDataResponse
+	err := v.sendRequest("WriteTimesheetData",
+		`<WriteTimesheetData>`+
+			d.buildBody("SchaltsatzData", buf.String())+
+			`</WriteTimesheetData>`,
+		&resp)
+	if err != nil {
+		return "", err
+	}
+	return resp.WriteTimesheetDataResult.RefreshId, nil
+}
+
+func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetId, data map[string]TimeslotSlice) (<-chan error, error) {
+	refreshId, err := d.WriteTimesheetData(v, id, data)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan error)
+
+	go func() {
+		start := time.Now()
+		// Waiting for update to be done
+		for wait := WriteDataWaitDuration; true; {
+			time.Sleep(wait)
+
+			status, err := v.RequestWriteStatus(refreshId)
+			if err != nil {
+				ch <- err
+				break
+			}
+
+			if status == 4 {
+				break
+			}
+
+			wait /= 4
+			if wait < WriteDataWaitMinDuration {
+				wait = WriteDataWaitMinDuration
+			}
+
+			if v.Debug {
+				log.Printf("WriteTimesheetDataWait: status %d, wait %d secs...\n",
+					status, wait/time.Second)
+			}
+		}
+		if v.Debug {
+			log.Println("WriteTimesheetDataWait done in", time.Now().Sub(start))
+		}
+		close(ch)
+	}()
+
+	return ch, nil
 }
