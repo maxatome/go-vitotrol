@@ -181,37 +181,8 @@ func (d *Device) WriteDataWait(v *Session, attrId AttrId, value string) (<-chan 
 
 	ch := make(chan error)
 
-	go func() {
-		start := time.Now()
-		// Waiting for update to be done
-		for wait := WriteDataWaitDuration; true; {
-			time.Sleep(wait)
-
-			status, err := v.RequestWriteStatus(refreshId)
-			if err != nil {
-				ch <- err
-				break
-			}
-
-			if status == 4 {
-				break
-			}
-
-			wait /= 4
-			if wait < WriteDataWaitMinDuration {
-				wait = WriteDataWaitMinDuration
-			}
-
-			if v.Debug {
-				log.Printf("WriteDataWait: status %d, wait %d secs...\n",
-					status, wait/time.Second)
-			}
-		}
-		if v.Debug {
-			log.Println("WriteDataWait done in", time.Now().Sub(start))
-		}
-		close(ch)
-	}()
+	go waitAsyncStatus(v, refreshId, ch, (*Session).RequestWriteStatus,
+		WriteDataWaitDuration, WriteDataWaitMinDuration)
 
 	return ch, nil
 }
@@ -269,37 +240,8 @@ func (d *Device) RefreshDataWait(v *Session, attrIds []AttrId) (<-chan error, er
 
 	ch := make(chan error)
 
-	go func() {
-		start := time.Now()
-		// Waiting availability of data, yes *8* seconds the first time :(
-		for wait := RefreshDataWaitDuration; true; {
-			time.Sleep(wait)
-
-			status, err := v.RequestRefreshStatus(refreshId)
-			if err != nil {
-				ch <- err
-				break
-			}
-
-			if status == 4 {
-				break
-			}
-
-			wait /= 4
-			if wait < RefreshDataWaitMinDuration {
-				wait = RefreshDataWaitMinDuration
-			}
-
-			if v.Debug {
-				log.Printf("RefreshDataWait: status %d, wait %d secs...\n",
-					status, wait/time.Second)
-			}
-		}
-		if v.Debug {
-			log.Println("RefreshDataWait done in", time.Now().Sub(start))
-		}
-		close(ch)
-	}()
+	go waitAsyncStatus(v, refreshId, ch, (*Session).RequestRefreshStatus,
+		RefreshDataWaitDuration, RefreshDataWaitMinDuration)
 
 	return ch, nil
 }
@@ -501,6 +443,17 @@ func (d *Device) WriteTimesheetData(v *Session, id TimesheetId, data map[string]
 	return resp.WriteTimesheetDataResult.RefreshId, nil
 }
 
+var (
+	// WriteTimesheetDataWaitDuration defines the duration to wait in
+	// WriteTimesheetDataWait after the WriteTimesheetData call before
+	// calling RequestWriteStatus for the first time. After that first
+	// call, the next pause duration will be divided by 4 and so on.
+	WriteTimesheetDataWaitDuration = 8 * time.Second
+	// WriteTimesheetDataWaitMinDuration defines the minimal duration of pauses
+	// between RequestWriteStatus calls.
+	WriteTimesheetDataWaitMinDuration = 1 * time.Second
+)
+
 // WriteTimesheetDataWait launches the Vitotrol™ WriteTimesheetData
 // request and returns a channel on which the final error
 // (asynchronous one) will be received (nil if the data has been
@@ -516,37 +469,43 @@ func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetId, data map[str
 
 	ch := make(chan error)
 
-	go func() {
-		start := time.Now()
-		// Waiting for update to be done
-		for wait := WriteDataWaitDuration; true; {
-			time.Sleep(wait)
-
-			status, err := v.RequestWriteStatus(refreshId)
-			if err != nil {
-				ch <- err
-				break
-			}
-
-			if status == 4 {
-				break
-			}
-
-			wait /= 4
-			if wait < WriteDataWaitMinDuration {
-				wait = WriteDataWaitMinDuration
-			}
-
-			if v.Debug {
-				log.Printf("WriteTimesheetDataWait: status %d, wait %d secs...\n",
-					status, wait/time.Second)
-			}
-		}
-		if v.Debug {
-			log.Println("WriteTimesheetDataWait done in", time.Now().Sub(start))
-		}
-		close(ch)
-	}()
+	go waitAsyncStatus(v, refreshId, ch, (*Session).RequestWriteStatus,
+		WriteTimesheetDataWaitDuration, WriteTimesheetDataWaitMinDuration)
 
 	return ch, nil
+}
+
+func waitAsyncStatus(v *Session, refreshId string, ch chan error,
+	requestStatus func(*Session, string) (int, error),
+	waitFirstDuration, waitminDuration time.Duration) {
+	start := time.Now()
+	// Waiting availability of data, yes *8* seconds the first time :(
+	for wait := waitFirstDuration; true; {
+		time.Sleep(wait)
+
+		status, err := requestStatus(v, refreshId)
+		if err != nil {
+			ch <- err
+			break
+		}
+
+		if status == 4 {
+			break
+		}
+
+		wait /= 4
+		if wait < waitminDuration {
+			wait = waitminDuration
+		}
+
+		if v.Debug {
+			log.Printf("waitAsyncStatus(%s): status %d, wait %d secs...\n",
+				refreshId, status, wait/time.Second)
+		}
+	}
+	if v.Debug {
+		log.Printf("waitAsyncStatus(%s) done in %s",
+			refreshId, time.Now().Sub(start))
+	}
+	close(ch)
 }
