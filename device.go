@@ -501,6 +501,13 @@ func (d *Device) WriteTimesheetData(v *Session, id TimesheetId, data map[string]
 	return resp.WriteTimesheetDataResult.RefreshId, nil
 }
 
+// WriteTimesheetDataWait launches the Vitotrol™ WriteTimesheetData
+// request and returns a channel on which the final error
+// (asynchronous one) will be received (nil if the data has been
+// correctly written).
+//
+// If an error occurs during the WriteTimesheetData call (synchronous
+// one), a nil channel is returned with an error.
 func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetId, data map[string]TimeslotSlice) (<-chan error, error) {
 	refreshId, err := d.WriteTimesheetData(v, id, data)
 	if err != nil {
