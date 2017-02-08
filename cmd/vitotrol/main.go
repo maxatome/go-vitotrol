@@ -7,8 +7,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/maxatome/go-vitotrol"
+	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 )
 
 var allowedActions = map[string]bool{
@@ -39,6 +41,7 @@ ACTION & PARAMS can be:
                        get the timesheet TIMESHEET data
 - set_timesheet TIMESHEET {"wday":[{"from":630,"to":2200},...],...}
                        replace the whole timesheet TIMESHEET
+                       The JSON content can be in a file with the syntax @file
 - errors               get the error history`)
 	}
 
@@ -243,7 +246,18 @@ ACTION & PARAMS can be:
 			os.Exit(1)
 		}
 		tss := make(map[string]vitotrol.TimeslotSlice)
-		err := json.Unmarshal([]byte(params[1]), &tss)
+		var data []byte
+		if strings.HasPrefix(params[1], "@") && len(params[1]) > 1 {
+			var err error
+			data, err = ioutil.ReadFile(params[1][1:])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Cannot read file %s: %s\n", params[1][1:], err)
+				os.Exit(1)
+			}
+		} else {
+			data = []byte(params[1])
+		}
+		err := json.Unmarshal(data, &tss)
 		if err != nil {
 			fmt.Fprintln(os.Stderr,
 				"*** JSON definition of timesheet is invalid:", err)
