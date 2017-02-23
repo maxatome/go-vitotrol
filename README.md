@@ -22,19 +22,28 @@ Only requests I really need are currently implemented:
 
 Any pull-request is welcome.
 
+## Install
+
+The library:
+```
+go get -u github.com/maxatome/go-vitotrol
+```
+
+The vitotrol command:
+```
+go get -u github.com/maxatome/go-vitotrol/cmd/vitotrol
+```
+
+resulting a `vitotrol` executable in `$GOPATH/bin/` directory.
+
 ## Example
 
-See `cmd/vitotrol/main.go` for an example.
+See `cmd/vitotrol/*.go` for an example of use.
+
+Executable `vitotrol` usage follows:
 
 ```
-cd cmd/vitotrol
-go build
-```
-
-The generated executable `cmd/vitotrol/vitotrol` usage follows:
-
-```
-usage: ./cmd/vitotrol/vitotrol [OPTIONS] ACTION [PARAMS]
+usage: vitotrol [OPTIONS] ACTION [PARAMS]
   -config string
     	login+password config file
   -debug
