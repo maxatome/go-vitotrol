@@ -26,7 +26,12 @@ Any pull-request is welcome.
 
 See `cmd/vitotrol/main.go` for an example.
 
-`cmd/vitotrol/vitotrol` usage follows:
+```
+cd cmd/vitotrol
+go build
+```
+
+The generated executable `cmd/vitotrol/vitotrol` usage follows:
 
 ```
 usage: ./cmd/vitotrol/vitotrol [OPTIONS] ACTION [PARAMS]
