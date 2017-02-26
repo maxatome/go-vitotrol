@@ -130,11 +130,11 @@ func TestVitodataEnum(t *testing.T) {
 
 	str, err = typeEnumTest.Vitodata2HumanValue("42")
 	assert.Equal("", str)
-	assert.Equal(EnumInvalidValue, err)
+	assert.Equal(ErrEnumInvalidValue, err)
 
 	str, err = typeEnumTest.Vitodata2HumanValue("foo")
 	assert.Equal("", str)
-	assert.Equal(EnumInvalidValue, err)
+	assert.Equal(ErrEnumInvalidValue, err)
 
 	// Vitodata2NativeValue
 	num, err := typeEnumTest.Vitodata2NativeValue("1")
@@ -143,9 +143,9 @@ func TestVitodataEnum(t *testing.T) {
 
 	num, err = typeEnumTest.Vitodata2NativeValue("42")
 	assert.Nil(num)
-	assert.Equal(EnumInvalidValue, err)
+	assert.Equal(ErrEnumInvalidValue, err)
 
 	num, err = typeEnumTest.Vitodata2NativeValue("foo")
 	assert.Nil(num)
-	assert.Equal(EnumInvalidValue, err)
+	assert.Equal(ErrEnumInvalidValue, err)
 }

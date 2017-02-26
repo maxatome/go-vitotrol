@@ -31,19 +31,23 @@ func existTimesheetName(tsName string) (vitotrol.TimesheetID, error) {
 	return tID, nil
 }
 
+// An Action can be typically called by main to do a job.
 type Action interface {
+	// NeedAuth tells whether this Action needs an authentication or not.
 	NeedAuth() bool
+
+	// Do executes the action.
 	Do(pOptions *Options, params []string) error
 }
 
 var actions = map[string]Action{
-	"list":          &ListAction{},
-	"get":           &GetAction{},
-	"rget":          &GetAction{rget: true},
-	"set":           &SetAction{},
-	"errors":        &ErrorsAction{},
-	"timesheet":     &TimesheetAction{},
-	"set_timesheet": &SetTimesheetAction{},
+	"list":          &listAction{},
+	"get":           &getAction{},
+	"rget":          &getAction{rget: true},
+	"set":           &setAction{},
+	"errors":        &errorsAction{},
+	"timesheet":     &timesheetAction{},
+	"set_timesheet": &setTimesheetAction{},
 }
 
 type authAction struct {
@@ -92,14 +96,14 @@ func (a *authAction) NeedAuth() bool {
 	return true
 }
 
-// ListAction implements the "list" action.
-type ListAction struct{}
+// listAction implements the "list" action.
+type listAction struct{}
 
-func (a *ListAction) NeedAuth() bool {
+func (a *listAction) NeedAuth() bool {
 	return false
 }
 
-func (a *ListAction) Do(pOptions *Options, params []string) error {
+func (a *listAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 || params[0] == "attrs" {
 		for _, pAttrRef := range vitotrol.AttributesRef {
 			fmt.Println(pAttrRef)
@@ -119,13 +123,13 @@ func (a *ListAction) Do(pOptions *Options, params []string) error {
 		params[0])
 }
 
-// GetAction implements the "get" and "rget" actions.
-type GetAction struct {
+// getAction implements the "get" and "rget" actions.
+type getAction struct {
 	authAction
 	rget bool
 }
 
-func (a *GetAction) Do(pOptions *Options, params []string) error {
+func (a *getAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
 		return errors.New("at least one PARAM is missing")
 	}
@@ -170,12 +174,12 @@ func (a *GetAction) Do(pOptions *Options, params []string) error {
 	return nil
 }
 
-// SetAction implements the "set" action.
-type SetAction struct {
+// setAction implements the "set" action.
+type setAction struct {
 	authAction
 }
 
-func (a *SetAction) Do(pOptions *Options, params []string) error {
+func (a *setAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 || (len(params)&1) != 0 {
 		return errors.New("PARAMS must be a list of pairs: ATTR_NAME, VALUE")
 	}
@@ -222,12 +226,12 @@ func (a *SetAction) Do(pOptions *Options, params []string) error {
 	return nil
 }
 
-// ErrorsAction implements the "errors" action.
-type ErrorsAction struct {
+// errorsAction implements the "errors" action.
+type errorsAction struct {
 	authAction
 }
 
-func (a *ErrorsAction) Do(pOptions *Options, params []string) error {
+func (a *errorsAction) Do(pOptions *Options, params []string) error {
 	err := a.initVitotrol(pOptions)
 	if err != nil {
 		return err
@@ -250,12 +254,12 @@ func (a *ErrorsAction) Do(pOptions *Options, params []string) error {
 	return nil
 }
 
-// SetTimesheetAction implements the "set_timesheet" action.
-type SetTimesheetAction struct {
+// setTimesheetAction implements the "set_timesheet" action.
+type setTimesheetAction struct {
 	authAction
 }
 
-func (a *SetTimesheetAction) Do(pOptions *Options, params []string) error {
+func (a *setTimesheetAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
 		return errors.New("timesheet name is missing")
 	}
@@ -302,12 +306,12 @@ func (a *SetTimesheetAction) Do(pOptions *Options, params []string) error {
 	return nil
 }
 
-// TimesheetAction implements the "timesheet" action.
-type TimesheetAction struct {
+// timesheetAction implements the "timesheet" action.
+type timesheetAction struct {
 	authAction
 }
 
-func (a *TimesheetAction) Do(pOptions *Options, params []string) error {
+func (a *timesheetAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
 		return errors.New("timesheet name is missing")
 	}

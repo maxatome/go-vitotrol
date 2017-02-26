@@ -20,13 +20,13 @@ func testSendRequestAnyMulti(assert *assert.Assertions,
 	actions map[string]*testAction, testName string) bool {
 	ts := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			soapActionUrl := r.Header.Get("SOAPAction")
-			if !assert.NotEmpty(soapActionUrl,
+			soapActionURL := r.Header.Get("SOAPAction")
+			if !assert.NotEmpty(soapActionURL,
 				"%s: SOAPAction header found", testName) {
 				w.WriteHeader(http.StatusNotAcceptable)
 				return
 			}
-			soapAction := soapActionUrl[strings.LastIndex(soapActionUrl, "/")+1:]
+			soapAction := soapActionURL[strings.LastIndex(soapActionURL, "/")+1:]
 			pAction := actions[soapAction]
 			if !assert.NotNil(pAction,
 				"%s: SOAPAction header `%s' matches one expected action",

@@ -4,8 +4,11 @@ import (
 	"fmt"
 )
 
+// A TimesheetID allows to reference a specific timesheet. See
+// *Timesheet consts.
 type TimesheetID uint16
 
+// All available/recognized TimesheetID values.
 const (
 	HotWaterLoopTimesheet TimesheetID = 7193 // Programmation bouclage ECS
 	HotWaterTimesheet     TimesheetID = 7192 // Programmation ECS

@@ -18,6 +18,7 @@ var allowedActions = map[string]bool{
 	"set_timesheet": true,
 }
 
+// Options gathers user parameters together.
 type Options struct {
 	login      string
 	password   string

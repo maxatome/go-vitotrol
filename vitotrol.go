@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+// MainURL is the Viessmann Vitodata API URL.
 var MainURL = `http://www.viessmann.com/app_vitodata/VIIWebService-1.16.0.0/iPhoneWebService.asmx`
 
 const (
@@ -86,17 +87,17 @@ func (v *Session) sendRequest(soapAction string, reqBody string, respBody HasRes
 // Login
 //
 
+// LoginResponse is a response to a Login request.
 type LoginResponse struct {
-	LoginResult LoginResult `xml:"Body>LoginResponse>LoginResult"`
+	LoginResult struct {
+		ResultHeader
+		Version   string `xml:"TechVersion"`
+		Firstname string `xml:"Vorname"`
+		Lastname  string `xml:"Nachname"`
+	} `xml:"Body>LoginResponse>LoginResult"`
 }
 
-type LoginResult struct {
-	ResultHeader
-	Version   string `xml:"TechVersion"`
-	Firstname string `xml:"Vorname"`
-	Lastname  string `xml:"Nachname"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *LoginResponse) ResultHeader() *ResultHeader {
 	return &r.LoginResult.ResultHeader
 }
@@ -127,30 +128,30 @@ func (v *Session) Login(login, password string) error {
 // GetDevices
 //
 
-type GetDevicesDevices struct {
+type getDevicesDevices struct {
 	ID          uint32 `xml:"GeraetId"`
 	Name        string `xml:"GeraetName"`
 	HasError    bool   `xml:"HatFehler"`
 	IsConnected bool   `xml:"IstVerbunden"`
 }
 
-type GetDevicesLocation struct {
+type getDevicesLocation struct {
 	ID          uint32              `xml:"AnlageId"`
 	Name        string              `xml:"AnlageName"`
-	Devices     []GetDevicesDevices `xml:"GeraeteListe>GeraetV2"`
+	Devices     []getDevicesDevices `xml:"GeraeteListe>GeraetV2"`
 	HasError    bool                `xml:"HatFehler"`
 	IsConnected bool                `xml:"IstVerbunden"`
 }
 
+// GetDevicesResponse is a response to a GetDevices request.
 type GetDevicesResponse struct {
-	GetDevicesResult GetDevicesResult `xml:"Body>GetDevicesResponse>GetDevicesResult"`
+	GetDevicesResult struct {
+		ResultHeader
+		Locations []getDevicesLocation `xml:"AnlageListe>AnlageV2"`
+	} `xml:"Body>GetDevicesResponse>GetDevicesResult"`
 }
 
-type GetDevicesResult struct {
-	ResultHeader
-	Locations []GetDevicesLocation `xml:"AnlageListe>AnlageV2"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *GetDevicesResponse) ResultHeader() *ResultHeader {
 	return &r.GetDevicesResult.ResultHeader
 }
@@ -187,14 +188,16 @@ func (v *Session) GetDevices() error {
 // RequestRefreshStatus
 //
 
+// RequestRefreshStatusResponse is a response to a
+// RequestRefreshStatus request.
 type RequestRefreshStatusResponse struct {
-	RequestRefreshStatusResult RequestRefreshStatusResult `xml:"Body>RequestRefreshStatusResponse>RequestRefreshStatusResult"`
-}
-type RequestRefreshStatusResult struct {
-	ResultHeader
-	Status int `xml:"Status"`
+	RequestRefreshStatusResult struct {
+		ResultHeader
+		Status int `xml:"Status"`
+	} `xml:"Body>RequestRefreshStatusResponse>RequestRefreshStatusResult"`
 }
 
+// ResultHeader returns the ResultHeader address in the response.
 func (r *RequestRefreshStatusResponse) ResultHeader() *ResultHeader {
 	return &r.RequestRefreshStatusResult.ResultHeader
 }
@@ -220,15 +223,15 @@ func (v *Session) RequestRefreshStatus(refreshID string) (int, error) {
 // RequestWriteStatus
 //
 
+// RequestWriteStatusResponse is a response to a RequestWriteStatus request.
 type RequestWriteStatusResponse struct {
-	RequestWriteStatusResult RequestWriteStatusResult `xml:"Body>RequestWriteStatusResponse>RequestWriteStatusResult"`
+	RequestWriteStatusResult struct {
+		ResultHeader
+		Status int `xml:"Status"`
+	} `xml:"Body>RequestWriteStatusResponse>RequestWriteStatusResult"`
 }
 
-type RequestWriteStatusResult struct {
-	ResultHeader
-	Status int `xml:"Status"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *RequestWriteStatusResponse) ResultHeader() *ResultHeader {
 	return &r.RequestWriteStatusResult.ResultHeader
 }

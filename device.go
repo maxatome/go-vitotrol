@@ -75,21 +75,21 @@ func (d *Device) sendRequest(v *Session, soapAction string, reqBody string, resp
 // GetData
 //
 
-type GetDataValue struct {
+type getDataValue struct {
 	ID    uint16 `xml:"DatenpunktId"`
 	Value string `xml:"Wert"`
 	Time  Time   `xml:"Zeitstempel"`
 }
 
+// GetDataResponse is a response to a GetData request.
 type GetDataResponse struct {
-	GetDataResult GetDataResult `xml:"Body>GetDataResponse>GetDataResult"`
+	GetDataResult struct {
+		ResultHeader
+		Values []getDataValue `xml:"DatenwerteListe>WerteListe"`
+	} `xml:"Body>GetDataResponse>GetDataResult"`
 }
 
-type GetDataResult struct {
-	ResultHeader
-	Values []GetDataValue `xml:"DatenwerteListe>WerteListe"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *GetDataResponse) ResultHeader() *ResultHeader {
 	return &r.GetDataResult.ResultHeader
 }
@@ -130,15 +130,15 @@ func (d *Device) GetData(v *Session, attrIDs []AttrID) error {
 // WriteData
 //
 
+// WriteDataResponse is a response to a WriteData request.
 type WriteDataResponse struct {
-	WriteDataResult WriteDataResult `xml:"Body>WriteDataResponse>WriteDataResult"`
+	WriteDataResult struct {
+		ResultHeader
+		RefreshID string `xml:"AktualisierungsId"`
+	} `xml:"Body>WriteDataResponse>WriteDataResult"`
 }
 
-type WriteDataResult struct {
-	ResultHeader
-	RefreshID string `xml:"AktualisierungsId"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *WriteDataResponse) ResultHeader() *ResultHeader {
 	return &r.WriteDataResult.ResultHeader
 }
@@ -191,14 +191,15 @@ func (d *Device) WriteDataWait(v *Session, attrID AttrID, value string) (<-chan 
 // RefreshData
 //
 
+// RefreshDataResponse is a response to a RefreshData request.
 type RefreshDataResponse struct {
-	RefreshDataResult RefreshDataResult `xml:"Body>RefreshDataResponse>RefreshDataResult"`
-}
-type RefreshDataResult struct {
-	ResultHeader
-	RefreshID string `xml:"AktualisierungsId"`
+	RefreshDataResult struct {
+		ResultHeader
+		RefreshID string `xml:"AktualisierungsId"`
+	} `xml:"Body>RefreshDataResponse>RefreshDataResult"`
 }
 
+// ResultHeader returns the ResultHeader address in the response.
 func (r *RefreshDataResponse) ResultHeader() *ResultHeader {
 	return &r.RefreshDataResult.ResultHeader
 }
@@ -250,6 +251,8 @@ func (d *Device) RefreshDataWait(v *Session, attrIDs []AttrID) (<-chan error, er
 // GetErrorHistory
 //
 
+// ErrorHistoryEvent represents a timestamped history event generally
+// found in a GetErrorHistoryResponse.
 type ErrorHistoryEvent struct {
 	Error    string `xml:"FehlerCode"`
 	Message  string `xml:"FehlerMeldung"`
@@ -265,14 +268,15 @@ func (e *ErrorHistoryEvent) String() string {
 	return fmt.Sprintf("%s@%s = %s%s", e.Error, e.Time, e.Message, isActive)
 }
 
+// GetErrorHistoryResponse is a response to a GetErrorHistory request.
 type GetErrorHistoryResponse struct {
-	GetErrorHistoryResult GetErrorHistoryResult `xml:"Body>GetErrorHistoryResponse>GetErrorHistoryResult"`
-}
-type GetErrorHistoryResult struct {
-	ResultHeader
-	Events []ErrorHistoryEvent `xml:"FehlerListe>FehlerHistorie"`
+	GetErrorHistoryResult struct {
+		ResultHeader
+		Events []ErrorHistoryEvent `xml:"FehlerListe>FehlerHistorie"`
+	} `xml:"Body>GetErrorHistoryResponse>GetErrorHistoryResult"`
 }
 
+// ResultHeader returns the ResultHeader address in the response.
 func (r *GetErrorHistoryResponse) ResultHeader() *ResultHeader {
 	return &r.GetErrorHistoryResult.ResultHeader
 }
@@ -295,22 +299,22 @@ func (d *Device) GetErrorHistory(v *Session) error {
 // GetTimesheetData
 //
 
-type DaySlot struct {
+type daySlot struct {
 	Day  string `xml:"Wochentag"`
 	From uint16 `xml:"ZeitVon"`
 	To   uint16 `xml:"ZeitBis"`
 }
 
+// GetTimesheetDataResponse is a response to a GetTimesheetData request.
 type GetTimesheetDataResponse struct {
-	GetTimesheetDataResult GetTimesheetDataResult `xml:"Body>GetTimesheetDataResponse>GetTimesheetDataResult"`
+	GetTimesheetDataResult struct {
+		ResultHeader
+		ID       uint16    `xml:"SchaltsatzDaten>DatenpunktID"`
+		DaySlots []daySlot `xml:"SchaltsatzDaten>Schaltzeiten>Schaltzeit"`
+	} `xml:"Body>GetTimesheetDataResponse>GetTimesheetDataResult"`
 }
 
-type GetTimesheetDataResult struct {
-	ResultHeader
-	ID       uint16    `xml:"SchaltsatzDaten>DatenpunktID"`
-	DaySlots []DaySlot `xml:"SchaltsatzDaten>Schaltzeiten>Schaltzeit"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *GetTimesheetDataResponse) ResultHeader() *ResultHeader {
 	return &r.GetTimesheetDataResult.ResultHeader
 }
@@ -350,15 +354,15 @@ func (d *Device) GetTimesheetData(v *Session, id TimesheetID) error {
 // WriteTimesheetData
 //
 
+// WriteTimesheetDataResponse is a response to a WriteTimesheetData request.
 type WriteTimesheetDataResponse struct {
-	WriteTimesheetDataResult WriteTimesheetDataResult `xml:"Body>WriteTimesheetDataResponse>WriteTimesheetDataResult"`
+	WriteTimesheetDataResult struct {
+		ResultHeader
+		RefreshID string `xml:"AktualisierungsId"`
+	} `xml:"Body>WriteTimesheetDataResponse>WriteTimesheetDataResult"`
 }
 
-type WriteTimesheetDataResult struct {
-	ResultHeader
-	RefreshID string `xml:"AktualisierungsId"`
-}
-
+// ResultHeader returns the ResultHeader address in the response.
 func (r *WriteTimesheetDataResponse) ResultHeader() *ResultHeader {
 	return &r.WriteTimesheetDataResult.ResultHeader
 }

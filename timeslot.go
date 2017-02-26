@@ -18,6 +18,7 @@ func (t *Timeslot) String() string {
 		t.To/100, t.To%100)
 }
 
+// TimeslotSlice allows to sort Timeslot slices.
 type TimeslotSlice []Timeslot
 
 func (t TimeslotSlice) Len() int           { return len(t) }
