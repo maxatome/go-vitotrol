@@ -67,7 +67,7 @@ func (a *authAction) initVitotrol(pOptions *Options) error {
 		return fmt.Errorf("GetDevices failed: %s", err)
 	}
 	if len(v.Devices) == 0 {
-		return errors.New("No device found!")
+		return errors.New("No device found")
 	}
 
 	pDevice := &v.Devices[0]
@@ -127,7 +127,7 @@ type GetAction struct {
 
 func (a *GetAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
-		return errors.New("at least one PARAM is missing!")
+		return errors.New("at least one PARAM is missing")
 	}
 
 	var attrs []vitotrol.AttrID
@@ -177,7 +177,7 @@ type SetAction struct {
 
 func (a *SetAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 || (len(params)&1) != 0 {
-		return errors.New("PARAMS must be a list of pairs: ATTR_NAME VALUE ...")
+		return errors.New("PARAMS must be a list of pairs: ATTR_NAME, VALUE")
 	}
 
 	attrsValues := make(map[vitotrol.AttrID]string, len(params)/2)
@@ -257,7 +257,7 @@ type SetTimesheetAction struct {
 
 func (a *SetTimesheetAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
-		return errors.New("timesheet name is missing!")
+		return errors.New("timesheet name is missing")
 	}
 
 	var err error
@@ -268,7 +268,7 @@ func (a *SetTimesheetAction) Do(pOptions *Options, params []string) error {
 	}
 
 	if len(params) == 1 {
-		return errors.New("JSON definition of timesheet is missing!")
+		return errors.New("JSON definition of timesheet is missing")
 	}
 	tss := make(map[string]vitotrol.TimeslotSlice)
 	var data []byte
@@ -309,7 +309,7 @@ type TimesheetAction struct {
 
 func (a *TimesheetAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
-		return errors.New("timesheet name is missing!")
+		return errors.New("timesheet name is missing")
 	}
 
 	var err error
