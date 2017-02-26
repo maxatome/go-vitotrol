@@ -124,7 +124,8 @@ func (v *VitodataString) Vitodata2NativeValue(value string) (interface{}, error)
 	return value, nil
 }
 
-// A vitodataString represent any Vitodata™ Enum type. It must be composed.
+// VitodataEnum represents any Vitodata™ Enum type. See NewEnum to
+// specialize it.
 type VitodataEnum struct {
 	values    map[string]uint16
 	revValues []string
