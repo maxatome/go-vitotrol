@@ -242,7 +242,7 @@ func TestLogin(t *testing.T) {
 	assert := assert.New(t)
 
 	type loginRequest struct {
-		AppId      string `xml:"Body>Login>AppId"`
+		AppID      string `xml:"Body>Login>AppId"`
 		AppVersion string `xml:"Body>Login>AppVersion"`
 		Password   string `xml:"Body>Login>Passwort"`
 		System     string `xml:"Body>Login>Betriebssystem"`
@@ -250,7 +250,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	expectedRequest := &loginRequest{
-		AppId:      "prod",
+		AppID:      "prod",
 		AppVersion: "4.3.1",
 		Password:   "bingo",
 		System:     "Android",
@@ -315,14 +315,14 @@ func TestGetDevices(t *testing.T) {
 			}
 			return assert.Equal([]Device{
 				{
-					LocationId:   31456,
+					LocationID:   31456,
 					LocationName: "Paris",
-					DeviceId:     40213,
+					DeviceID:     40213,
 					DeviceName:   "VT 200 (HO1C)",
 					HasError:     true,
 					IsConnected:  true,
-					Attributes:   map[AttrId]*Value{},
-					Timesheets:   map[TimesheetId]map[string]TimeslotSlice{},
+					Attributes:   map[AttrID]*Value{},
+					Timesheets:   map[TimesheetID]map[string]TimeslotSlice{},
 				},
 			},
 				v.Devices)
@@ -388,12 +388,12 @@ func TestGetDevices(t *testing.T) {
 //
 
 type requestRefreshStatusRequest struct {
-	AktualisierungsId string `xml:"Body>RequestRefreshStatus>AktualisierungsId"`
+	AktualisierungsID string `xml:"Body>RequestRefreshStatus>AktualisierungsId"`
 }
 
 var requestRefreshStatusTest = testAction{
 	expectedRequest: &requestRefreshStatusRequest{
-		AktualisierungsId: "123456789",
+		AktualisierungsID: "123456789",
 	},
 	serverResponse: `<RequestRefreshStatusResponse xmlns="http://www.e-controlnet.de/services/vii/">
   <RequestRefreshStatusResult>
@@ -441,12 +441,12 @@ func TestRequestRefreshStatus(t *testing.T) {
 //
 
 type requestWriteStatusRequest struct {
-	AktualisierungsId string `xml:"Body>RequestWriteStatus>AktualisierungsId"`
+	AktualisierungsID string `xml:"Body>RequestWriteStatus>AktualisierungsId"`
 }
 
 var requestWriteStatusTest = testAction{
 	expectedRequest: &requestWriteStatusRequest{
-		AktualisierungsId: "123456789",
+		AktualisierungsID: "123456789",
 	},
 	serverResponse: `<RequestWriteStatusResponse xmlns="http://www.e-controlnet.de/services/vii/">
   <RequestWriteStatusResult>

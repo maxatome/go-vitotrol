@@ -20,25 +20,25 @@ func TestAttrRef(t *testing.T) {
 func TestAttributesVars(t *testing.T) {
 	assert := assert.New(t)
 
-	for name, aId := range AttributesNames2Ids {
-		tRef, ok := AttributesRef[aId]
-		if assert.True(ok, "AttributesRef[%d] exists", aId) {
+	for name, aID := range AttributesNames2IDs {
+		tRef, ok := AttributesRef[aID]
+		if assert.True(ok, "AttributesRef[%d] exists", aID) {
 			assert.Equal(tRef.Name, name,
-				"ID %d: same name in AttributesRef and AttributesNames2Ids", aId)
+				"ID %d: same name in AttributesRef and AttributesNames2IDs", aID)
 		}
 	}
 
-	for aId, tRef := range AttributesRef {
-		aId2, ok := AttributesNames2Ids[tRef.Name]
-		if assert.True(ok, "AttributesNames2Ids[%s] exists", tRef.Name) {
-			assert.Equal(aId2, aId,
-				tRef.Name+": same ID in AttributesRef and AttributesNames2Ids")
+	for aID, tRef := range AttributesRef {
+		aID2, ok := AttributesNames2IDs[tRef.Name]
+		if assert.True(ok, "AttributesNames2IDs[%s] exists", tRef.Name) {
+			assert.Equal(aID2, aID,
+				tRef.Name+": same ID in AttributesRef and AttributesNames2IDs")
 		}
 	}
 
 	assert.Equal(len(AttributesRef), len(Attributes))
-	for _, aId := range Attributes {
-		_, ok := AttributesRef[aId]
+	for _, aID := range Attributes {
+		_, ok := AttributesRef[aID]
 		assert.True(ok, "ID %d of Attributes is present in AttributesRef")
 	}
 }

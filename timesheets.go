@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-type TimesheetId uint16
+type TimesheetID uint16
 
 const (
-	HotWaterLoopTimesheet TimesheetId = 7193 // Programmation bouclage ECS
-	HotWaterTimesheet     TimesheetId = 7192 // Programmation ECS
-	HeatingTimesheet      TimesheetId = 7191 // Programmation chauffage
+	HotWaterLoopTimesheet TimesheetID = 7193 // Programmation bouclage ECS
+	HotWaterTimesheet     TimesheetID = 7192 // Programmation ECS
+	HeatingTimesheet      TimesheetID = 7191 // Programmation chauffage
 )
 
 // A TimesheetRef describe a time program reference.
@@ -24,7 +24,7 @@ func (t *TimesheetRef) String() string {
 }
 
 // TimesheetsRef lists the reference for each timesheet ID.
-var TimesheetsRef = map[TimesheetId]*TimesheetRef{
+var TimesheetsRef = map[TimesheetID]*TimesheetRef{
 	HotWaterLoopTimesheet: {
 		Name: "HotWaterLoopTimesheet",
 		Doc:  "Time program for domestic hot water recirculation pump",
@@ -39,12 +39,12 @@ var TimesheetsRef = map[TimesheetId]*TimesheetRef{
 	},
 }
 
-// TimesheetsNames2Ids maps the timesheet names to their TimesheetId
+// TimesheetsNames2IDs maps the timesheet names to their TimesheetID
 // counterpart.
-var TimesheetsNames2Ids = func() map[string]TimesheetId {
-	ret := make(map[string]TimesheetId, len(TimesheetsRef))
-	for timesheetId, pTimesheetRef := range TimesheetsRef {
-		ret[pTimesheetRef.Name] = timesheetId
+var TimesheetsNames2IDs = func() map[string]TimesheetID {
+	ret := make(map[string]TimesheetID, len(TimesheetsRef))
+	for timesheetID, pTimesheetRef := range TimesheetsRef {
+		ret[pTimesheetRef.Name] = timesheetID
 	}
 	return ret
 }()

@@ -128,14 +128,14 @@ func (v *Session) Login(login, password string) error {
 //
 
 type GetDevicesDevices struct {
-	Id          uint32 `xml:"GeraetId"`
+	ID          uint32 `xml:"GeraetId"`
 	Name        string `xml:"GeraetName"`
 	HasError    bool   `xml:"HatFehler"`
 	IsConnected bool   `xml:"IstVerbunden"`
 }
 
 type GetDevicesLocation struct {
-	Id          uint32              `xml:"AnlageId"`
+	ID          uint32              `xml:"AnlageId"`
 	Name        string              `xml:"AnlageName"`
 	Devices     []GetDevicesDevices `xml:"GeraeteListe>GeraetV2"`
 	HasError    bool                `xml:"HatFehler"`
@@ -168,14 +168,14 @@ func (v *Session) GetDevices() error {
 	for _, location := range resp.GetDevicesResult.Locations {
 		for _, device := range location.Devices {
 			v.Devices = append(v.Devices, Device{
-				LocationId:   location.Id,
+				LocationID:   location.ID,
 				LocationName: location.Name,
-				DeviceId:     device.Id,
+				DeviceID:     device.ID,
 				DeviceName:   device.Name,
 				HasError:     location.HasError || device.HasError,
 				IsConnected:  location.IsConnected && device.IsConnected,
-				Attributes:   map[AttrId]*Value{},
-				Timesheets:   map[TimesheetId]map[string]TimeslotSlice{},
+				Attributes:   map[AttrID]*Value{},
+				Timesheets:   map[TimesheetID]map[string]TimeslotSlice{},
 			})
 		}
 	}
@@ -202,11 +202,11 @@ func (r *RequestRefreshStatusResponse) ResultHeader() *ResultHeader {
 // RequestRefreshStatus launches the Vitotrol™ RequestRefreshStatus
 // request to follow the status of the RefreshData request matching
 // the passed refresh ID. Use RefreshDataWait instead.
-func (v *Session) RequestRefreshStatus(refreshId string) (int, error) {
+func (v *Session) RequestRefreshStatus(refreshID string) (int, error) {
 	var resp RequestRefreshStatusResponse
 	err := v.sendRequest("RequestRefreshStatus",
 		"<RequestRefreshStatus><AktualisierungsId>"+
-			refreshId+
+			refreshID+
 			"</AktualisierungsId></RequestRefreshStatus>",
 		&resp)
 	if err != nil {
@@ -236,11 +236,11 @@ func (r *RequestWriteStatusResponse) ResultHeader() *ResultHeader {
 // RequestWriteStatus launches the Vitotrol™ RequestWriteStatus
 // request to follow the status of the WriteData request matching
 // the passed refresh ID. Use WriteDataWait instead.
-func (v *Session) RequestWriteStatus(refreshId string) (int, error) {
+func (v *Session) RequestWriteStatus(refreshID string) (int, error) {
 	var resp RequestWriteStatusResponse
 	err := v.sendRequest("RequestWriteStatus",
 		"<RequestWriteStatus><AktualisierungsId>"+
-			refreshId+
+			refreshID+
 			"</AktualisierungsId></RequestWriteStatus>",
 		&resp)
 	if err != nil {

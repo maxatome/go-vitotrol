@@ -59,10 +59,10 @@ func testSendRequestAnyMulti(assert *assert.Assertions,
 	v := &Session{
 		Devices: []Device{
 			{
-				DeviceId:   testDeviceId,
-				LocationId: testLocationId,
-				Attributes: map[AttrId]*Value{},
-				Timesheets: map[TimesheetId]map[string]TimeslotSlice{},
+				DeviceID:   testDeviceID,
+				LocationID: testLocationID,
+				Attributes: map[AttrID]*Value{},
+				Timesheets: map[TimesheetID]map[string]TimeslotSlice{},
 			},
 		},
 	}
@@ -81,7 +81,7 @@ func TestWriteDataWait(t *testing.T) {
 		func(v *Session, d *Device) bool {
 			WriteDataWaitDuration = 0
 			WriteDataWaitMinDuration = 0
-			ch, err := d.WriteDataWait(v, writeDataTestId, writeDataTestValue)
+			ch, err := d.WriteDataWait(v, writeDataTestID, writeDataTestValue)
 			if !assert.Nil(err) {
 				return false
 			}
@@ -109,7 +109,7 @@ func TestWriteDataWait(t *testing.T) {
 	testSendRequestAnyMulti(assert,
 		func(v *Session, d *Device) bool {
 			WriteDataWaitDuration = 0
-			ch, err := d.WriteDataWait(v, writeDataTestId, writeDataTestValue)
+			ch, err := d.WriteDataWait(v, writeDataTestID, writeDataTestValue)
 			assert.NotNil(err)
 			return assert.Nil(ch)
 		},
@@ -125,7 +125,7 @@ func TestWriteDataWait(t *testing.T) {
 	// Error during RequestWriteStatus
 	testSendRequestAnyMulti(assert,
 		func(v *Session, d *Device) bool {
-			ch, err := d.WriteDataWait(v, writeDataTestId, writeDataTestValue)
+			ch, err := d.WriteDataWait(v, writeDataTestID, writeDataTestValue)
 			if !assert.Nil(err) {
 				return false
 			}
@@ -165,7 +165,7 @@ func TestRefreshDataWait(t *testing.T) {
 		func(v *Session, d *Device) bool {
 			RefreshDataWaitDuration = 0
 			RefreshDataWaitMinDuration = 0
-			ch, err := d.RefreshDataWait(v, refreshDataTestIds)
+			ch, err := d.RefreshDataWait(v, refreshDataTestIDs)
 			if !assert.Nil(err) {
 				return false
 			}
@@ -193,7 +193,7 @@ func TestRefreshDataWait(t *testing.T) {
 	testSendRequestAnyMulti(assert,
 		func(v *Session, d *Device) bool {
 			RefreshDataWaitDuration = 0
-			ch, err := d.RefreshDataWait(v, refreshDataTestIds)
+			ch, err := d.RefreshDataWait(v, refreshDataTestIDs)
 			assert.NotNil(err)
 			return assert.Nil(ch)
 		},
@@ -209,7 +209,7 @@ func TestRefreshDataWait(t *testing.T) {
 	// Error during RequestRefreshStatus
 	testSendRequestAnyMulti(assert,
 		func(v *Session, d *Device) bool {
-			ch, err := d.RefreshDataWait(v, refreshDataTestIds)
+			ch, err := d.RefreshDataWait(v, refreshDataTestIDs)
 			if !assert.Nil(err) {
 				return false
 			}

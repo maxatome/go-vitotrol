@@ -5,41 +5,41 @@ import (
 	"strconv"
 )
 
-// An AttrId defines an attribute ID
-type AttrId uint16
+// An AttrID defines an attribute ID
+type AttrID uint16
 
 // Attribute IDs currently supported by the library. For each, the
 // Vitotrol™ name.
 const (
-	IndoorTemp             AttrId = 5367   // temp_rts_r
-	OutdoorTemp            AttrId = 5373   // temp_ats_r
-	BoilerTemp             AttrId = 5374   // temp_kts_r
-	HotWaterTemp           AttrId = 5381   // temp_ww_r
-	HotWaterOutTemp        AttrId = 5382   // temp_auslauf_r
-	HeatWaterOutTemp       AttrId = 6052   // temp_vts_r
-	HeatNormalTemp         AttrId = 82     // konf_raumsolltemp_rw
-	PartyModeTemp          AttrId = 79     // konf_partysolltemp_rw
-	HeatReducedTemp        AttrId = 85     // konf_raumsolltemp_reduziert_rw
-	HotWaterSetpointTemp   AttrId = 51     // konf_ww_solltemp_rw
-	BurnerHoursRun         AttrId = 104    // anzahl_brennerstunden_r
-	BurnerHoursRunReset    AttrId = 106    // anzahl_brennerstunden_w
-	BurnerState            AttrId = 600    // zustand_brenner_r
-	BurnerStarts           AttrId = 111    // anzahl_brennerstart_r
-	InternalPumpStatus     AttrId = 245    // zustand_interne_pumpe_r
-	HeatingPumpStatus      AttrId = 729    // zustand_heizkreispumpe_r
-	CirculationPumpState   AttrId = 7181   // zustand_zirkulationspumpe_r
-	PartyMode              AttrId = 7855   // konf_partybetrieb_rw
-	EnergySavingMode       AttrId = 7852   // konf_sparbetrieb_rw
-	DateTime               AttrId = 5385   // konf_uhrzeit_rw
-	CurrentError           AttrId = 7184   // aktuelle_fehler_r
-	HolidaysStart          AttrId = 306    // konf_ferien_start_rw
-	HolidaysEnd            AttrId = 309    // konf_ferien_ende_rw
-	HolidaysStatus         AttrId = 714    // zustand_ferienprogramm_r
-	Way3ValveStatus        AttrId = 5389   // info_status_umschaltventil_r
-	OperatingModeRequested AttrId = 92     // konf_betriebsart_rw
-	OperatingModeCurrent   AttrId = 708    // aktuelle_betriebsart_r
-	FrostProtectionStatus  AttrId = 717    // zustand_frostgefahr_r
-	NoAttr                 AttrId = 0xffff // Used in error cases
+	IndoorTemp             AttrID = 5367   // temp_rts_r
+	OutdoorTemp            AttrID = 5373   // temp_ats_r
+	BoilerTemp             AttrID = 5374   // temp_kts_r
+	HotWaterTemp           AttrID = 5381   // temp_ww_r
+	HotWaterOutTemp        AttrID = 5382   // temp_auslauf_r
+	HeatWaterOutTemp       AttrID = 6052   // temp_vts_r
+	HeatNormalTemp         AttrID = 82     // konf_raumsolltemp_rw
+	PartyModeTemp          AttrID = 79     // konf_partysolltemp_rw
+	HeatReducedTemp        AttrID = 85     // konf_raumsolltemp_reduziert_rw
+	HotWaterSetpointTemp   AttrID = 51     // konf_ww_solltemp_rw
+	BurnerHoursRun         AttrID = 104    // anzahl_brennerstunden_r
+	BurnerHoursRunReset    AttrID = 106    // anzahl_brennerstunden_w
+	BurnerState            AttrID = 600    // zustand_brenner_r
+	BurnerStarts           AttrID = 111    // anzahl_brennerstart_r
+	InternalPumpStatus     AttrID = 245    // zustand_interne_pumpe_r
+	HeatingPumpStatus      AttrID = 729    // zustand_heizkreispumpe_r
+	CirculationPumpState   AttrID = 7181   // zustand_zirkulationspumpe_r
+	PartyMode              AttrID = 7855   // konf_partybetrieb_rw
+	EnergySavingMode       AttrID = 7852   // konf_sparbetrieb_rw
+	DateTime               AttrID = 5385   // konf_uhrzeit_rw
+	CurrentError           AttrID = 7184   // aktuelle_fehler_r
+	HolidaysStart          AttrID = 306    // konf_ferien_start_rw
+	HolidaysEnd            AttrID = 309    // konf_ferien_ende_rw
+	HolidaysStatus         AttrID = 714    // zustand_ferienprogramm_r
+	Way3ValveStatus        AttrID = 5389   // info_status_umschaltventil_r
+	OperatingModeRequested AttrID = 92     // konf_betriebsart_rw
+	OperatingModeCurrent   AttrID = 708    // aktuelle_betriebsart_r
+	FrostProtectionStatus  AttrID = 717    // zustand_frostgefahr_r
+	NoAttr                 AttrID = 0xffff // Used in error cases
 )
 
 // An AttrAccess defines attributes access rights.
@@ -74,7 +74,7 @@ func (r *AttrRef) String() string {
 }
 
 // AttributesRef lists the reference for each attribute ID.
-var AttributesRef = map[AttrId]*AttrRef{
+var AttributesRef = map[AttrID]*AttrRef{
 	IndoorTemp: {
 		Type:   TypeDouble,
 		Access: ReadOnly,
@@ -266,21 +266,21 @@ var AttributesRef = map[AttrId]*AttrRef{
 	},
 }
 
-// AttributesNames2Ids maps the attributes names to their AttrId
+// AttributesNames2IDs maps the attributes names to their AttrID
 // counterpart.
-var AttributesNames2Ids = func() map[string]AttrId {
-	ret := make(map[string]AttrId, len(AttributesRef))
-	for attrId, pAttrRef := range AttributesRef {
-		ret[pAttrRef.Name] = attrId
+var AttributesNames2IDs = func() map[string]AttrID {
+	ret := make(map[string]AttrID, len(AttributesRef))
+	for attrID, pAttrRef := range AttributesRef {
+		ret[pAttrRef.Name] = attrID
 	}
 	return ret
 }()
 
-// Attributes lists the AttrIds for all available attributes.
-var Attributes = func() []AttrId {
-	ret := make([]AttrId, 0, len(AttributesRef))
-	for attrId := range AttributesRef {
-		ret = append(ret, attrId)
+// Attributes lists the AttrIDs for all available attributes.
+var Attributes = func() []AttrID {
+	ret := make([]AttrID, 0, len(AttributesRef))
+	for attrID := range AttributesRef {
+		ret = append(ret, attrID)
 	}
 	return ret
 }()

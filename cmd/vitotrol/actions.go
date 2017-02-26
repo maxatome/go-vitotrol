@@ -9,26 +9,26 @@ import (
 	"strings"
 )
 
-func checkAttributeAccess(attrName string, reqAccess vitotrol.AttrAccess) (vitotrol.AttrId, error) {
-	attrId, ok := vitotrol.AttributesNames2Ids[attrName]
+func checkAttributeAccess(attrName string, reqAccess vitotrol.AttrAccess) (vitotrol.AttrID, error) {
+	attrID, ok := vitotrol.AttributesNames2IDs[attrName]
 	if !ok {
 		return vitotrol.NoAttr, fmt.Errorf("unknown attribute `%s'", attrName)
 	}
 
-	if (vitotrol.AttributesRef[attrId].Access & reqAccess) != reqAccess {
+	if (vitotrol.AttributesRef[attrID].Access & reqAccess) != reqAccess {
 		return vitotrol.NoAttr, fmt.Errorf("attribute `%s' is not %s",
 			attrName, vitotrol.AccessToStr[reqAccess])
 	}
 
-	return attrId, nil
+	return attrID, nil
 }
 
-func existTimesheetName(tsName string) (vitotrol.TimesheetId, error) {
-	tId, ok := vitotrol.TimesheetsNames2Ids[tsName]
+func existTimesheetName(tsName string) (vitotrol.TimesheetID, error) {
+	tID, ok := vitotrol.TimesheetsNames2IDs[tsName]
 	if !ok {
 		return 0, fmt.Errorf("unknown timesheet `%s'", tsName)
 	}
-	return tId, nil
+	return tID, nil
 }
 
 type Action interface {
@@ -130,12 +130,12 @@ func (a *GetAction) Do(pOptions *Options, params []string) error {
 		return errors.New("at least one PARAM is missing!")
 	}
 
-	var attrs []vitotrol.AttrId
+	var attrs []vitotrol.AttrID
 	// Special case -> all attributes
 	if len(params) == 1 && params[0] == "all" {
 		attrs = vitotrol.Attributes
 	} else {
-		attrs = make([]vitotrol.AttrId, len(params))
+		attrs = make([]vitotrol.AttrID, len(params))
 		var err error
 		for idx, attrName := range params {
 			attrs[idx], err = checkAttributeAccess(attrName, vitotrol.ReadOnly)
@@ -180,21 +180,21 @@ func (a *SetAction) Do(pOptions *Options, params []string) error {
 		return errors.New("PARAMS must be a list of pairs: ATTR_NAME VALUE ...")
 	}
 
-	attrsValues := make(map[vitotrol.AttrId]string, len(params)/2)
+	attrsValues := make(map[vitotrol.AttrID]string, len(params)/2)
 	for idx := 0; idx < len(params); idx += 2 {
-		attrId, err := checkAttributeAccess(params[idx], vitotrol.WriteOnly)
+		attrID, err := checkAttributeAccess(params[idx], vitotrol.WriteOnly)
 		if err != nil {
 			return err
 		}
 
 		value, err :=
-			vitotrol.AttributesRef[attrId].Type.Human2VitodataValue(params[idx+1])
+			vitotrol.AttributesRef[attrID].Type.Human2VitodataValue(params[idx+1])
 		if err != nil {
 			return fmt.Errorf("value `%s' of attribute %s is invalid: %s",
 				params[idx+1], params[idx], err)
 		}
 
-		attrsValues[attrId] = value
+		attrsValues[attrID] = value
 	}
 
 	err := a.initVitotrol(pOptions)
@@ -203,8 +203,8 @@ func (a *SetAction) Do(pOptions *Options, params []string) error {
 	}
 
 	// Set them all
-	for attrId, value := range attrsValues {
-		ch, err := a.d.WriteDataWait(a.v, attrId, value)
+	for attrID, value := range attrsValues {
+		ch, err := a.d.WriteDataWait(a.v, attrID, value)
 		if err != nil {
 			return fmt.Errorf("WriteData error: %s", err)
 		}
@@ -215,7 +215,7 @@ func (a *SetAction) Do(pOptions *Options, params []string) error {
 
 		if pOptions.verbose {
 			fmt.Printf("%s attribute successfully set to `%s'\n",
-				vitotrol.AttributesRef[attrId].Name, value)
+				vitotrol.AttributesRef[attrID].Name, value)
 		}
 	}
 
@@ -262,7 +262,7 @@ func (a *SetTimesheetAction) Do(pOptions *Options, params []string) error {
 
 	var err error
 
-	tId, err := existTimesheetName(params[0])
+	tID, err := existTimesheetName(params[0])
 	if err != nil {
 		return err
 	}
@@ -290,7 +290,7 @@ func (a *SetTimesheetAction) Do(pOptions *Options, params []string) error {
 		return err
 	}
 
-	ch, err := a.d.WriteTimesheetDataWait(a.v, tId, tss)
+	ch, err := a.d.WriteTimesheetDataWait(a.v, tID, tss)
 	if err != nil {
 		return fmt.Errorf("WriteTimesheetData error: %s", err)
 	}
@@ -314,9 +314,9 @@ func (a *TimesheetAction) Do(pOptions *Options, params []string) error {
 
 	var err error
 
-	timesheetIds := make([]vitotrol.TimesheetId, len(params))
+	timesheetIDs := make([]vitotrol.TimesheetID, len(params))
 	for idx, name := range params {
-		timesheetIds[idx], err = existTimesheetName(name)
+		timesheetIDs[idx], err = existTimesheetName(name)
 		if err != nil {
 			return err
 		}
@@ -327,18 +327,18 @@ func (a *TimesheetAction) Do(pOptions *Options, params []string) error {
 		return err
 	}
 
-	for _, tId := range timesheetIds {
-		err := a.d.GetTimesheetData(a.v, tId)
+	for _, tID := range timesheetIDs {
+		err := a.d.GetTimesheetData(a.v, tID)
 		if err != nil {
 			return fmt.Errorf("GetTimesheetData error: %s", err)
 		}
 
-		ts := a.d.Timesheets[tId]
+		ts := a.d.Timesheets[tID]
 		if a.options.jsonOutput {
 			buf, _ := json.Marshal(ts)
 			fmt.Println(string(buf))
 		} else {
-			fmt.Println(vitotrol.TimesheetsRef[tId])
+			fmt.Println(vitotrol.TimesheetsRef[tID])
 			for _, day := range []string{"mon", "tue", "wed", "thu", "fri", "sat", "sun"} {
 				fmt.Printf("- %s:\n", day)
 				for _, slot := range ts[day] {

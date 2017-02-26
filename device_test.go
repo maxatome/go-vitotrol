@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	testDeviceId   = 1234
-	testLocationId = 5678
+	testDeviceID   = 1234
+	testLocationID = 5678
 	testTimeStr    = "2016-10-30 12:13:14"
 )
 
@@ -32,7 +32,7 @@ func TestFormatAttributes(t *testing.T) {
 	assert := assert.New(t)
 
 	pDevice := &Device{
-		Attributes: map[AttrId]*Value{
+		Attributes: map[AttrID]*Value{
 			NoAttr: {
 				Value: "unknown-attr",
 				Time:  testTime,
@@ -58,24 +58,24 @@ func TestFormatAttributes(t *testing.T) {
 			fmt.Sprintf("OutdoorTemp: uninitialized (%s)\n",
 				AttributesRef[OutdoorTemp].Doc),
 		pDevice.FormatAttributes(
-			[]AttrId{NoAttr, BurnerState, IndoorTemp, OutdoorTemp}))
+			[]AttrID{NoAttr, BurnerState, IndoorTemp, OutdoorTemp}))
 }
 
-func TestMakeDatenpunktIds(t *testing.T) {
+func TestMakeDatenpunktIDs(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.Equal(`<DatenpunktIds><int>11</int><int>22</int></DatenpunktIds>`,
-		makeDatenpunktIds([]AttrId{11, 22}))
+		makeDatenpunktIDs([]AttrID{11, 22}))
 }
 
 type requestDeviceCommon struct {
-	DeviceId   uint32 `xml:"GeraetId"`
-	LocationId uint32 `xml:"AnlageId"`
+	DeviceID   uint32 `xml:"GeraetId"`
+	LocationID uint32 `xml:"AnlageId"`
 }
 
 var deviceCommon = requestDeviceCommon{
-	DeviceId:   testDeviceId,
-	LocationId: testLocationId,
+	DeviceID:   testDeviceID,
+	LocationID: testLocationID,
 }
 
 func intoDeviceResponse(action, content string) string {
@@ -95,10 +95,10 @@ func testSendRequestDeviceAny(assert *assert.Assertions,
 		func(v *Session) bool {
 			v.Devices = []Device{
 				{
-					DeviceId:   testDeviceId,
-					LocationId: testLocationId,
-					Attributes: map[AttrId]*Value{},
-					Timesheets: map[TimesheetId]map[string]TimeslotSlice{},
+					DeviceID:   testDeviceID,
+					LocationID: testLocationID,
+					Attributes: map[AttrID]*Value{},
+					Timesheets: map[TimesheetID]map[string]TimeslotSlice{},
 				},
 			}
 			return sendReq(v, &v.Devices[0])
@@ -117,7 +117,7 @@ func TestGetData(t *testing.T) {
 
 	type requestGetData struct {
 		requestDeviceCommon
-		Ids []int `xml:"DatenpunktIds>int"`
+		IDs []int `xml:"DatenpunktIds>int"`
 	}
 
 	type requestBody struct {
@@ -127,7 +127,7 @@ func TestGetData(t *testing.T) {
 	expectedRequest := &requestBody{
 		GetData: requestGetData{
 			requestDeviceCommon: deviceCommon,
-			Ids:                 []int{11, 22},
+			IDs:                 []int{11, 22},
 		},
 	}
 
@@ -135,11 +135,11 @@ func TestGetData(t *testing.T) {
 	testSendRequestDeviceAny(assert,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			err := d.GetData(v, []AttrId{11, 22})
+			err := d.GetData(v, []AttrID{11, 22})
 			if !assert.Nil(err) {
 				return false
 			}
-			return assert.Equal(map[AttrId]*Value{
+			return assert.Equal(map[AttrID]*Value{
 				11: {
 					Value: "value11",
 					Time:  testTime,
@@ -175,7 +175,7 @@ func TestGetData(t *testing.T) {
 	testSendRequestDeviceAny(assert,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			return assert.NotNil(d.GetData(v, []AttrId{11, 22}))
+			return assert.NotNil(d.GetData(v, []AttrID{11, 22}))
 		},
 		// SOAP action
 		"GetData",
@@ -191,7 +191,7 @@ func TestGetData(t *testing.T) {
 
 type requestWriteData struct {
 	requestDeviceCommon
-	Id    int    `xml:"DatapointId"`
+	ID    int    `xml:"DatapointId"`
 	Value string `xml:"Wert"`
 }
 
@@ -200,7 +200,7 @@ type requestWriteDataBody struct {
 }
 
 const (
-	writeDataTestId    = 12
+	writeDataTestID    = 12
 	writeDataTestValue = "value12"
 )
 
@@ -208,7 +208,7 @@ var writeDataTest = testAction{
 	expectedRequest: &requestWriteDataBody{
 		WriteData: requestWriteData{
 			requestDeviceCommon: deviceCommon,
-			Id:                  writeDataTestId,
+			ID:                  writeDataTestID,
 			Value:               writeDataTestValue,
 		},
 	},
@@ -224,11 +224,11 @@ func TestWriteData(t *testing.T) {
 	testSendRequestDeviceAny(assert,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			refreshId, err := d.WriteData(v, writeDataTestId, writeDataTestValue)
+			refreshID, err := d.WriteData(v, writeDataTestID, writeDataTestValue)
 			if !assert.Nil(err) {
 				return false
 			}
-			return assert.Equal("123456789", refreshId)
+			return assert.Equal("123456789", refreshID)
 		},
 		// SOAP action
 		"WriteData",
@@ -241,7 +241,7 @@ func TestWriteData(t *testing.T) {
 	testSendRequestDeviceAny(assert,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			_, err := d.WriteData(v, writeDataTestId, writeDataTestValue)
+			_, err := d.WriteData(v, writeDataTestID, writeDataTestValue)
 			return assert.NotNil(err)
 		},
 		// SOAP action
@@ -258,20 +258,20 @@ func TestWriteData(t *testing.T) {
 
 type requestRefreshData struct {
 	requestDeviceCommon
-	Ids []AttrId `xml:"DatenpunktIds>int"`
+	IDs []AttrID `xml:"DatenpunktIds>int"`
 }
 
 type requestRefreshDataBody struct {
 	RefreshData requestRefreshData `xml:"Body>RefreshData"`
 }
 
-var refreshDataTestIds = []AttrId{11, 22, 33}
+var refreshDataTestIDs = []AttrID{11, 22, 33}
 
 var refreshDataTest = testAction{
 	expectedRequest: &requestRefreshDataBody{
 		RefreshData: requestRefreshData{
 			requestDeviceCommon: deviceCommon,
-			Ids:                 refreshDataTestIds,
+			IDs:                 refreshDataTestIDs,
 		},
 	},
 	serverResponse: `<Ergebnis>0</Ergebnis>
@@ -286,11 +286,11 @@ func TestRefreshData(t *testing.T) {
 	testSendRequestDeviceAny(assert,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			refreshId, err := d.RefreshData(v, refreshDataTestIds)
+			refreshID, err := d.RefreshData(v, refreshDataTestIDs)
 			if !assert.Nil(err) {
 				return false
 			}
-			return assert.Equal("123456789", refreshId)
+			return assert.Equal("123456789", refreshID)
 		},
 		// SOAP action
 		"RefreshData",
@@ -303,7 +303,7 @@ func TestRefreshData(t *testing.T) {
 	testSendRequestDeviceAny(assert,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			return assert.NotNil(d.RefreshData(v, refreshDataTestIds))
+			return assert.NotNil(d.RefreshData(v, refreshDataTestIDs))
 		},
 		// SOAP action
 		"RefreshData",
@@ -421,7 +421,7 @@ func TestGetTimesheetData(t *testing.T) {
 
 	type requestGetTimesheetData struct {
 		requestDeviceCommon
-		Id int `xml:"DatenpunktId"`
+		ID int `xml:"DatenpunktId"`
 	}
 
 	type requestBody struct {
@@ -431,7 +431,7 @@ func TestGetTimesheetData(t *testing.T) {
 	expectedRequest := &requestBody{
 		GetTimesheetData: requestGetTimesheetData{
 			requestDeviceCommon: deviceCommon,
-			Id:                  23,
+			ID:                  23,
 		},
 	}
 
@@ -529,7 +529,7 @@ func TestWriteTimesheetData(t *testing.T) {
 
 	type requestWriteTimesheetData struct {
 		requestDeviceCommon
-		Id       int              `xml:"DatenpunktId"`
+		ID       int              `xml:"DatenpunktId"`
 		Type     int              `xml:"SchaltzeitTyp"`
 		DaySlots []requestDaySlot `xml:"Schaltzeiten>Schaltzeit"`
 	}
@@ -542,7 +542,7 @@ func TestWriteTimesheetData(t *testing.T) {
 	expectedRequest := &requestBody{
 		WriteTimesheetData: requestWriteTimesheetData{
 			requestDeviceCommon: deviceCommon,
-			Id:                  23,
+			ID:                  23,
 			Type:                1,
 			DaySlots: []requestDaySlot{
 				{Day: "MON", From: "0610", To: "0820", Value: 1, Position: 0},

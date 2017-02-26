@@ -12,17 +12,17 @@ import (
 
 // Device represents one Vitotrol™ device (a priori a boiler)
 type Device struct {
-	LocationId   uint32 // Vitotrol™ ID of location (AnlageId field)
+	LocationID   uint32 // Vitotrol™ ID of location (AnlageId field)
 	LocationName string // location name (AnlageName field)
-	DeviceId     uint32 // Vitotrol™ ID of device (GeraetId field)
+	DeviceID     uint32 // Vitotrol™ ID of device (GeraetId field)
 	DeviceName   string // device name (GeraetName field)
 	HasError     bool   // ORed HatFehler field of Device & Location
 	IsConnected  bool   // IstVerbunden field of Device
 
 	// cache of last read attributes values (filled by GetData)
-	Attributes map[AttrId]*Value
+	Attributes map[AttrID]*Value
 	// cache of last read timesheets data (filled by GetTimesheetData)
-	Timesheets map[TimesheetId]map[string]TimeslotSlice
+	Timesheets map[TimesheetID]map[string]TimeslotSlice
 	// cache of last read errors (filled by GetErrorHistory)
 	Errors []ErrorHistoryEvent
 }
@@ -30,14 +30,14 @@ type Device struct {
 // FormatAttributes displays informations about selected
 // attributes. Displays information about all known attributes when a
 // nil slice is passed.
-func (d *Device) FormatAttributes(attrs []AttrId) string {
+func (d *Device) FormatAttributes(attrs []AttrID) string {
 	buf := bytes.NewBuffer(nil)
 
-	pConcatFun := func(attrId AttrId, pValue *Value) {
-		pRef := AttributesRef[attrId]
+	pConcatFun := func(attrID AttrID, pValue *Value) {
+		pRef := AttributesRef[attrID]
 		if pRef == nil {
 			buf.WriteString(
-				fmt.Sprintf("%d: %s@%s\n", attrId, pValue.Value, pValue.Time))
+				fmt.Sprintf("%d: %s@%s\n", attrID, pValue.Value, pValue.Time))
 		} else if pValue != nil {
 			humanValue, err := pRef.Type.Vitodata2HumanValue(pValue.Value)
 			if err != nil {
@@ -52,8 +52,8 @@ func (d *Device) FormatAttributes(attrs []AttrId) string {
 		}
 	}
 
-	for _, attrId := range attrs {
-		pConcatFun(attrId, d.Attributes[attrId])
+	for _, attrID := range attrs {
+		pConcatFun(attrID, d.Attributes[attrID])
 	}
 
 	return buf.String()
@@ -64,7 +64,7 @@ func (d *Device) buildBody(soapAction string, reqBody string) string {
 <GeraetId>%d</GeraetId>
 <AnlageId>%d</AnlageId>
 %s
-</%[1]s>`, soapAction, d.DeviceId, d.LocationId, reqBody)
+</%[1]s>`, soapAction, d.DeviceID, d.LocationID, reqBody)
 }
 
 func (d *Device) sendRequest(v *Session, soapAction string, reqBody string, respBody HasResultHeader) error {
@@ -76,7 +76,7 @@ func (d *Device) sendRequest(v *Session, soapAction string, reqBody string, resp
 //
 
 type GetDataValue struct {
-	Id    uint16 `xml:"DatenpunktId"`
+	ID    uint16 `xml:"DatenpunktId"`
 	Value string `xml:"Wert"`
 	Time  Time   `xml:"Zeitstempel"`
 }
@@ -94,10 +94,10 @@ func (r *GetDataResponse) ResultHeader() *ResultHeader {
 	return &r.GetDataResult.ResultHeader
 }
 
-func makeDatenpunktIds(attrIds []AttrId) string {
+func makeDatenpunktIDs(attrIDs []AttrID) string {
 	body := bytes.NewBufferString("<DatenpunktIds>")
 
-	for _, id := range attrIds {
+	for _, id := range attrIDs {
 		body.WriteString(fmt.Sprintf("<int>%d</int>", id))
 	}
 
@@ -108,16 +108,16 @@ func makeDatenpunktIds(attrIds []AttrId) string {
 
 // GetData launches the Vitotrol™ GetData request. Populates the
 // internal cache before returning (see Attributes field).
-func (d *Device) GetData(v *Session, attrIds []AttrId) error {
+func (d *Device) GetData(v *Session, attrIDs []AttrID) error {
 	var resp GetDataResponse
-	err := d.sendRequest(v, "GetData", makeDatenpunktIds(attrIds), &resp)
+	err := d.sendRequest(v, "GetData", makeDatenpunktIDs(attrIDs), &resp)
 	if err != nil {
 		return err
 	}
 
 	// On met en cache
 	for _, respValue := range resp.GetDataResult.Values {
-		d.Attributes[AttrId(respValue.Id)] = &Value{
+		d.Attributes[AttrID(respValue.ID)] = &Value{
 			Time:  respValue.Time,
 			Value: respValue.Value,
 		}
@@ -136,7 +136,7 @@ type WriteDataResponse struct {
 
 type WriteDataResult struct {
 	ResultHeader
-	RefreshId string `xml:"AktualisierungsId"`
+	RefreshID string `xml:"AktualisierungsId"`
 }
 
 func (r *WriteDataResponse) ResultHeader() *ResultHeader {
@@ -145,15 +145,15 @@ func (r *WriteDataResponse) ResultHeader() *ResultHeader {
 
 // WriteData launches the Vitotrol™ WriteData request and returns the
 // "refresh ID" sent back by the server. Use WriteDataWait instead.
-func (d *Device) WriteData(v *Session, attrId AttrId, value string) (string, error) {
+func (d *Device) WriteData(v *Session, attrID AttrID, value string) (string, error) {
 	var resp WriteDataResponse
 	err := d.sendRequest(v, "WriteData",
-		fmt.Sprintf("<DatapointId>%d</DatapointId><Wert>%s</Wert>", attrId, value),
+		fmt.Sprintf("<DatapointId>%d</DatapointId><Wert>%s</Wert>", attrID, value),
 		&resp)
 	if err != nil {
 		return "", err
 	}
-	return resp.WriteDataResult.RefreshId, nil
+	return resp.WriteDataResult.RefreshID, nil
 }
 
 var (
@@ -173,15 +173,15 @@ var (
 //
 // If an error occurs during the WriteData call (synchronous one), a
 // nil channel is returned with an error.
-func (d *Device) WriteDataWait(v *Session, attrId AttrId, value string) (<-chan error, error) {
-	refreshId, err := d.WriteData(v, attrId, value)
+func (d *Device) WriteDataWait(v *Session, attrID AttrID, value string) (<-chan error, error) {
+	refreshID, err := d.WriteData(v, attrID, value)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan error)
 
-	go waitAsyncStatus(v, refreshId, ch, (*Session).RequestWriteStatus,
+	go waitAsyncStatus(v, refreshID, ch, (*Session).RequestWriteStatus,
 		WriteDataWaitDuration, WriteDataWaitMinDuration)
 
 	return ch, nil
@@ -196,7 +196,7 @@ type RefreshDataResponse struct {
 }
 type RefreshDataResult struct {
 	ResultHeader
-	RefreshId string `xml:"AktualisierungsId"`
+	RefreshID string `xml:"AktualisierungsId"`
 }
 
 func (r *RefreshDataResponse) ResultHeader() *ResultHeader {
@@ -206,13 +206,13 @@ func (r *RefreshDataResponse) ResultHeader() *ResultHeader {
 // RefreshData launches the Vitotrol™ RefreshData request and returns
 // the "refresh ID" sent back by the server. Use RefreshDataWait
 // instead.
-func (d *Device) RefreshData(v *Session, attrIds []AttrId) (string, error) {
+func (d *Device) RefreshData(v *Session, attrIDs []AttrID) (string, error) {
 	var resp RefreshDataResponse
-	err := d.sendRequest(v, "RefreshData", makeDatenpunktIds(attrIds), &resp)
+	err := d.sendRequest(v, "RefreshData", makeDatenpunktIDs(attrIDs), &resp)
 	if err != nil {
 		return "", err
 	}
-	return resp.RefreshDataResult.RefreshId, nil
+	return resp.RefreshDataResult.RefreshID, nil
 }
 
 var (
@@ -232,15 +232,15 @@ var (
 //
 // If an error occurs during the RefreshData call (synchronous one), a
 // nil channel is returned with an error.
-func (d *Device) RefreshDataWait(v *Session, attrIds []AttrId) (<-chan error, error) {
-	refreshId, err := d.RefreshData(v, attrIds)
+func (d *Device) RefreshDataWait(v *Session, attrIDs []AttrID) (<-chan error, error) {
+	refreshID, err := d.RefreshData(v, attrIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan error)
 
-	go waitAsyncStatus(v, refreshId, ch, (*Session).RequestRefreshStatus,
+	go waitAsyncStatus(v, refreshID, ch, (*Session).RequestRefreshStatus,
 		RefreshDataWaitDuration, RefreshDataWaitMinDuration)
 
 	return ch, nil
@@ -307,7 +307,7 @@ type GetTimesheetDataResponse struct {
 
 type GetTimesheetDataResult struct {
 	ResultHeader
-	Id       uint16    `xml:"SchaltsatzDaten>DatenpunktId"`
+	ID       uint16    `xml:"SchaltsatzDaten>DatenpunktID"`
 	DaySlots []DaySlot `xml:"SchaltsatzDaten>Schaltzeiten>Schaltzeit"`
 }
 
@@ -318,7 +318,7 @@ func (r *GetTimesheetDataResponse) ResultHeader() *ResultHeader {
 // GetTimesheetData launches the Vitotrol™ GetTimesheetData
 // request. Populates the internal cache before returning (see
 // Timesheets field).
-func (d *Device) GetTimesheetData(v *Session, id TimesheetId) error {
+func (d *Device) GetTimesheetData(v *Session, id TimesheetID) error {
 	var resp GetTimesheetDataResponse
 	err := d.sendRequest(v, "GetTimesheetData",
 		fmt.Sprintf("<DatenpunktId>%d</DatenpunktId>", id), &resp)
@@ -356,7 +356,7 @@ type WriteTimesheetDataResponse struct {
 
 type WriteTimesheetDataResult struct {
 	ResultHeader
-	RefreshId string `xml:"AktualisierungsId"`
+	RefreshID string `xml:"AktualisierungsId"`
 }
 
 func (r *WriteTimesheetDataResponse) ResultHeader() *ResultHeader {
@@ -384,7 +384,7 @@ var timesheetDaysSet = func() map[string]struct{} {
 // request and returns the "refresh ID" sent back by the server. Does
 // not populate the internal cache before returning (Timesheets
 // field), use WriteTimesheetDataWait instead.
-func (d *Device) WriteTimesheetData(v *Session, id TimesheetId, data map[string]TimeslotSlice) (string, error) {
+func (d *Device) WriteTimesheetData(v *Session, id TimesheetID, data map[string]TimeslotSlice) (string, error) {
 	buf := bytes.NewBufferString(
 		`<SchaltzeitTyp>1</SchaltzeitTyp>` +
 			`<DatenpunktId>`)
@@ -440,7 +440,7 @@ func (d *Device) WriteTimesheetData(v *Session, id TimesheetId, data map[string]
 	if err != nil {
 		return "", err
 	}
-	return resp.WriteTimesheetDataResult.RefreshId, nil
+	return resp.WriteTimesheetDataResult.RefreshID, nil
 }
 
 var (
@@ -461,21 +461,21 @@ var (
 //
 // If an error occurs during the WriteTimesheetData call (synchronous
 // one), a nil channel is returned with an error.
-func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetId, data map[string]TimeslotSlice) (<-chan error, error) {
-	refreshId, err := d.WriteTimesheetData(v, id, data)
+func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetID, data map[string]TimeslotSlice) (<-chan error, error) {
+	refreshID, err := d.WriteTimesheetData(v, id, data)
 	if err != nil {
 		return nil, err
 	}
 
 	ch := make(chan error)
 
-	go waitAsyncStatus(v, refreshId, ch, (*Session).RequestWriteStatus,
+	go waitAsyncStatus(v, refreshID, ch, (*Session).RequestWriteStatus,
 		WriteTimesheetDataWaitDuration, WriteTimesheetDataWaitMinDuration)
 
 	return ch, nil
 }
 
-func waitAsyncStatus(v *Session, refreshId string, ch chan error,
+func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 	requestStatus func(*Session, string) (int, error),
 	waitFirstDuration, waitminDuration time.Duration) {
 	start := time.Now()
@@ -483,7 +483,7 @@ func waitAsyncStatus(v *Session, refreshId string, ch chan error,
 	for wait := waitFirstDuration; true; {
 		time.Sleep(wait)
 
-		status, err := requestStatus(v, refreshId)
+		status, err := requestStatus(v, refreshID)
 		if err != nil {
 			ch <- err
 			break
@@ -500,12 +500,12 @@ func waitAsyncStatus(v *Session, refreshId string, ch chan error,
 
 		if v.Debug {
 			log.Printf("waitAsyncStatus(%s): status %d, wait %d secs...\n",
-				refreshId, status, wait/time.Second)
+				refreshID, status, wait/time.Second)
 		}
 	}
 	if v.Debug {
 		log.Printf("waitAsyncStatus(%s) done in %s",
-			refreshId, time.Now().Sub(start))
+			refreshID, time.Now().Sub(start))
 	}
 	close(ch)
 }
