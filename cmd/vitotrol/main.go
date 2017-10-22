@@ -43,8 +43,10 @@ ACTION & PARAMS can be:
 - set ATTR_NAME VALUE  set the value of attribute ATTR_NAME to VALUE
 - timesheet TIMESHEET ...
                        get the timesheet TIMESHEET data
-- set_timesheet TIMESHEET {"wday":[{"from":630,"to":2200},...],...}
+- set_timesheet TIMESHEET '{"wday":[{"from":630,"to":2200},...],...}'
                        replace the whole timesheet TIMESHEET
+                       wday is either a day (eg. mon) or a range of days
+                       (eg. mon-wed or sat-mon)
                        The JSON content can be in a file with the syntax @file
 - errors               get the error history`)
 	}

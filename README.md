@@ -69,6 +69,7 @@ ACTION & PARAMS can be:
 - set_timesheet TIMESHEET {"wday":[{"from":630,"to":2200},...],...}
                        replace the whole timesheet TIMESHEET
 		         wdays are mon, tue, wed, thu, fri, sat and sun
+			 or range of days like mon-fri or sat-mon
                        The JSON content can be in a file with the syntax @file
 - errors               get the error history
 ```

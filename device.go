@@ -376,10 +376,10 @@ var timesheetDays = []string{
 	"SAT",
 	"SUN",
 }
-var timesheetDaysSet = func() map[string]struct{} {
-	tss := make(map[string]struct{}, 7)
-	for _, day := range timesheetDays {
-		tss[day] = struct{}{}
+var timesheetDaysIdx = func() map[string]int {
+	tss := make(map[string]int, 7)
+	for idx, day := range timesheetDays {
+		tss[day] = idx
 	}
 	return tss
 }()
@@ -396,29 +396,65 @@ func (d *Device) WriteTimesheetData(v *Session, id TimesheetID, data map[string]
 	buf.WriteString(`</DatenpunktId>` +
 		`<Schaltzeiten>`)
 
+	dayDone := make(map[string]bool, 7)
+	for _, day := range timesheetDays {
+		dayDone[day] = false
+	}
+
 	preDays := make(map[string]*bytes.Buffer, 7)
 	for day, daySlots := range data {
 		day = strings.ToUpper(day)
-		_, ok := timesheetDaysSet[day]
-		if !ok {
-			return "", fmt.Errorf("Bad timesheet day `%s'", day)
+
+		var from, to int
+
+		// Simple day "MON"
+		from, ok := timesheetDaysIdx[day]
+		if ok {
+			to = from
+		} else {
+			// Range of days like "MON-FRI" or "SUN-WED"
+			it := strings.SplitN(day, "-", 2)
+			if len(it) != 2 {
+				return "", fmt.Errorf("Bad timesheet day `%s'", day)
+			}
+
+			from, ok = timesheetDaysIdx[it[0]]
+			if ok {
+				to, ok = timesheetDaysIdx[it[1]]
+			}
+			if !ok {
+				return "", fmt.Errorf("Bad timesheet range of days `%s'", day)
+			}
+
+			if from > to {
+				to += 7
+			}
 		}
 
 		sort.Sort(daySlots) // sort slots in place
 
-		tmpBuf := bytes.NewBuffer(nil)
-		preDays[day] = tmpBuf
+		for idxDay := from; idxDay <= to; idxDay++ {
+			day = timesheetDays[idxDay%7]
 
-		for idx, slot := range daySlots {
-			tmpBuf.WriteString(fmt.Sprintf(
-				`<Schaltzeit>`+
-					`<Wochentag>%s</Wochentag>`+
-					`<ZeitVon>%04d</ZeitVon>`+
-					`<ZeitBis>%04d</ZeitBis>`+
-					`<Wert>1</Wert>`+
-					`<Position>%d</Position>`+
-					`</Schaltzeit>`,
-				day, slot.From, slot.To, idx))
+			if dayDone[day] {
+				return "", fmt.Errorf("Duplicate day `%s'", day)
+			}
+			dayDone[day] = true
+
+			tmpBuf := bytes.NewBuffer(nil)
+			preDays[day] = tmpBuf
+
+			for idxSlot, slot := range daySlots {
+				tmpBuf.WriteString(fmt.Sprintf(
+					`<Schaltzeit>`+
+						`<Wochentag>%s</Wochentag>`+
+						`<ZeitVon>%04d</ZeitVon>`+
+						`<ZeitBis>%04d</ZeitBis>`+
+						`<Wert>1</Wert>`+
+						`<Position>%d</Position>`+
+						`</Schaltzeit>`,
+					day, slot.From, slot.To, idxSlot))
+			}
 		}
 	}
 

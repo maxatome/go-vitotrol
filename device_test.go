@@ -559,13 +559,11 @@ func TestWriteTimesheetData(t *testing.T) {
 	}
 
 	inputOK := map[string]TimeslotSlice{
-		"mon": {{From: 1610, To: 1820}, {From: 610, To: 820}},
-		"Tue": {{From: 610, To: 820}},
-		"weD": {{From: 610, To: 820}},
-		"tHu": {{From: 610, To: 820}},
-		"FRI": {{From: 610, To: 820}},
-		"sat": {{From: 1610, To: 1820}, {From: 610, To: 820}},
-		"sun": {{From: 610, To: 820}},
+		"mon":     {{From: 1610, To: 1820}, {From: 610, To: 820}},
+		"Tue":     {{From: 610, To: 820}},
+		"weD-FRI": {{From: 610, To: 820}},
+		"sat":     {{From: 1610, To: 1820}, {From: 610, To: 820}},
+		"sun":     {{From: 610, To: 820}},
 	}
 
 	// No problem
@@ -594,6 +592,33 @@ func TestWriteTimesheetData(t *testing.T) {
 			return assert.Empty(id) &&
 				assert.Error(err) &&
 				assert.Equal("Bad timesheet day `FOO'", err.Error())
+		},
+		"", nil, "", "WriteTimesheetData with bad day")
+
+	// Bad dayslot (day range)
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			id, err := d.WriteTimesheetData(v, 23, map[string]TimeslotSlice{
+				"foo-bar": {{From: 1610, To: 1820}},
+			})
+			return assert.Empty(id) &&
+				assert.Error(err) &&
+				assert.Equal("Bad timesheet range of days `FOO-BAR'", err.Error())
+		},
+		"", nil, "", "WriteTimesheetData with bad day range")
+
+	// Bad dayslot (duplicate)
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			id, err := d.WriteTimesheetData(v, 23, map[string]TimeslotSlice{
+				"mon":     {{From: 1610, To: 1820}},
+				"sun-tue": {{From: 1610, To: 1820}},
+			})
+			return assert.Empty(id) &&
+				assert.Error(err) &&
+				assert.Equal("Duplicate day `MON'", err.Error())
 		},
 		"", nil, "", "WriteTimesheetData with bad day")
 
