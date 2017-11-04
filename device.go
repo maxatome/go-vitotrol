@@ -2,6 +2,7 @@ package vitotrol
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -165,6 +166,9 @@ var (
 	// WriteDataWaitMinDuration defines the minimal duration of pauses
 	// between RequestWriteStatus calls.
 	WriteDataWaitMinDuration = 1 * time.Second
+	// WriteDataWaitTimeout is the max amount of time to wait during
+	// WriteDataWait method call before returning a ErrTimeout error.
+	WriteDataWaitTimeout = 60 * time.Second
 )
 
 // WriteDataWait launches the Vitotrol™ WriteData request and returns
@@ -182,7 +186,9 @@ func (d *Device) WriteDataWait(v *Session, attrID AttrID, value string) (<-chan 
 	ch := make(chan error)
 
 	go waitAsyncStatus(v, refreshID, ch, (*Session).RequestWriteStatus,
-		WriteDataWaitDuration, WriteDataWaitMinDuration)
+		WriteDataWaitDuration,
+		WriteDataWaitMinDuration,
+		WriteDataWaitTimeout)
 
 	return ch, nil
 }
@@ -225,6 +231,9 @@ var (
 	// RefreshDataWaitMinDuration defines the minimal duration of pauses
 	// between RequestRefreshStatus calls.
 	RefreshDataWaitMinDuration = 1 * time.Second
+	// RefreshDataWaitTimeout is the max amount of time to wait during
+	// RefreshDataWait method call before returning a ErrTimeout error.
+	RefreshDataWaitTimeout = 60 * time.Second
 )
 
 // RefreshDataWait launches the Vitotrol™ RefreshData request and
@@ -242,7 +251,9 @@ func (d *Device) RefreshDataWait(v *Session, attrIDs []AttrID) (<-chan error, er
 	ch := make(chan error)
 
 	go waitAsyncStatus(v, refreshID, ch, (*Session).RequestRefreshStatus,
-		RefreshDataWaitDuration, RefreshDataWaitMinDuration)
+		RefreshDataWaitDuration,
+		RefreshDataWaitMinDuration,
+		RefreshDataWaitTimeout)
 
 	return ch, nil
 }
@@ -492,6 +503,10 @@ var (
 	// WriteTimesheetDataWaitMinDuration defines the minimal duration of pauses
 	// between RequestWriteStatus calls.
 	WriteTimesheetDataWaitMinDuration = 1 * time.Second
+	// WriteTimesheetDataWaitTimeout is the max amount of time to wait
+	// during WriteTimesheetDataWait method call before returning a
+	// ErrTimeout error.
+	WriteTimesheetDataWaitTimeout = 60 * time.Second
 )
 
 // WriteTimesheetDataWait launches the Vitotrol™ WriteTimesheetData
@@ -510,14 +525,23 @@ func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetID, data map[str
 	ch := make(chan error)
 
 	go waitAsyncStatus(v, refreshID, ch, (*Session).RequestWriteStatus,
-		WriteTimesheetDataWaitDuration, WriteTimesheetDataWaitMinDuration)
+		WriteTimesheetDataWaitDuration,
+		WriteTimesheetDataWaitMinDuration,
+		WriteTimesheetDataWaitTimeout)
 
 	return ch, nil
 }
 
+var (
+	// ErrTimeout is the error returned by WriteDataWait,
+	// RefreshDataWait and WriteTimesheetDataWait methods when the
+	// response wait times out.
+	ErrTimeout = errors.New("Timeout")
+)
+
 func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 	requestStatus func(*Session, string) (int, error),
-	waitFirstDuration, waitminDuration time.Duration) {
+	waitFirstDuration, waitminDuration, timeout time.Duration) {
 	start := time.Now()
 	// Waiting availability of data, yes *8* seconds the first time :(
 	for wait := waitFirstDuration; true; {
@@ -533,12 +557,17 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 			break
 		}
 
+		if time.Until(start) >= timeout {
+			ch <- ErrTimeout
+			break
+		}
+
 		wait /= 4
 		if wait < waitminDuration {
 			wait = waitminDuration
 		}
 
-		if v.Debug {
+		if (status != 1 && status != 3) || v.Debug {
 			log.Printf("waitAsyncStatus(%s): status %d, wait %d secs...\n",
 				refreshID, status, wait/time.Second)
 		}
@@ -548,4 +577,46 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 			refreshID, time.Now().Sub(start))
 	}
 	close(ch)
+}
+
+//
+// GetTypeInfo
+//
+
+type AttributeInfo struct {
+	LocationID         uint32 `xml:"AnlageId"`
+	DeviceID           uint32 `xml:"GeraetId"`
+	AttributeID        uint32 `xml:"DatenpunktId"`
+	AttributeName      string `xml:"DatenpunktName"` // German one, more funny :)
+	AttributeType      string `xml:"DatenpunktTyp"`
+	AttributeTypeValue uint32 `xml:"DatenpunktTypWert"` // ???
+	MinValue           string `xml:"MinimalWert"`
+	MaxValue           string `xml:"MaximalWert"`
+	DataPointGroup     string `xml:"DatenpunktGruppe"`
+	HeatingCircuitID   uint32 `xml:"HeizkreisId"`
+	DefaultValue       string `xml:"Auslieferungswert"`
+	Readable           bool   `xml:"IstLesbar"`
+	Writtable          bool   `xml:"IstSchreibbar"`
+}
+
+type GetTypeInfoResponse struct {
+	GetTypeInfoResult struct {
+		ResultHeader
+		Attributes []*AttributeInfo `xml:"TypeInfoListe>DatenpunktTypInfo"`
+	} `xml:"Body>GetTypeInfoResponse>GetTypeInfoResult"`
+}
+
+// ResultHeader returns the ResultHeader address in the response.
+func (r *GetTypeInfoResponse) ResultHeader() *ResultHeader {
+	return &r.GetTypeInfoResult.ResultHeader
+}
+
+// GetTypeInfo launches the Vitotrol™ GetTypeInfo request.
+func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
+	var resp GetTypeInfoResponse
+	err := d.sendRequest(v, "GetTypeInfo", "", &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTypeInfoResult.Attributes, nil
 }

@@ -20,6 +20,7 @@ var (
 		(*GetErrorHistoryResponse)(nil),
 		(*GetTimesheetDataResponse)(nil),
 		(*WriteTimesheetDataResponse)(nil),
+		(*GetTypeInfoResponse)(nil),
 	}
 
 	testTime = func() Time {
@@ -635,4 +636,121 @@ func TestWriteTimesheetData(t *testing.T) {
 		// Response to reply
 		`<bad XML>`,
 		"WriteTimesheetData with async error")
+}
+
+//
+// GetTypeInfo
+//
+
+func TestGetTypeInfo(t *testing.T) {
+	assert := assert.New(t)
+
+	type requestGetTypeInfo struct {
+		requestDeviceCommon
+	}
+
+	type requestBody struct {
+		GetTypeInfo requestGetTypeInfo `xml:"Body>GetTypeInfo"`
+	}
+
+	expectedRequest := &requestBody{
+		GetTypeInfo: requestGetTypeInfo{
+			requestDeviceCommon: deviceCommon,
+		},
+	}
+
+	// No problem
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			list, err := d.GetTypeInfo(v)
+			if !assert.Nil(err) || !assert.NotEmpty(list) {
+				return false
+			}
+			return assert.Equal([]*AttributeInfo{
+				&AttributeInfo{
+					LocationID:         88888,
+					DeviceID:           77777,
+					AttributeID:        104,
+					AttributeName:      "anzahl_brennerstunden_r",
+					AttributeType:      "Double",
+					AttributeTypeValue: 0,
+					MinValue:           "",
+					MaxValue:           "",
+					DataPointGroup:     "ecnsysEventTypeGroupHC~VScotHO1_72",
+					HeatingCircuitID:   19178,
+					DefaultValue:       "",
+					Readable:           true,
+					Writtable:          false,
+				},
+				&AttributeInfo{
+					LocationID:         99999,
+					DeviceID:           66666,
+					AttributeID:        51,
+					AttributeName:      "konf_ww_solltemp_rw",
+					AttributeType:      "Integer",
+					AttributeTypeValue: 0,
+					MinValue:           "10",
+					MaxValue:           "95",
+					DataPointGroup:     "viessmann.eventtypegroupHC.name.VScotHO1_72~HC1",
+					HeatingCircuitID:   19179,
+					DefaultValue:       "50",
+					Readable:           true,
+					Writtable:          true,
+				},
+			}, list)
+		},
+		// SOAP action
+		"GetTypeInfo",
+		expectedRequest,
+		// Response to reply
+		`<Ergebnis>0</Ergebnis>
+<ErgebnisText>Kein Fehler</ErgebnisText>
+<TypeInfoListe>
+  <DatenpunktTypInfo>
+    <AnlageId>88888</AnlageId>
+    <GeraetId>77777</GeraetId>
+    <DatenpunktId>104</DatenpunktId>
+    <DatenpunktName>anzahl_brennerstunden_r</DatenpunktName>
+    <DatenpunktTyp>Double</DatenpunktTyp>
+    <DatenpunktTypWert>0</DatenpunktTypWert>
+    <MinimalWert />
+    <MaximalWert />
+    <DatenpunktGruppe>ecnsysEventTypeGroupHC~VScotHO1_72</DatenpunktGruppe>
+    <HeizkreisId>19178</HeizkreisId>
+    <Auslieferungswert />
+    <IstLesbar>true</IstLesbar>
+    <IstSchreibbar>false</IstSchreibbar>
+  </DatenpunktTypInfo>
+  <DatenpunktTypInfo>
+    <AnlageId>99999</AnlageId>
+    <GeraetId>66666</GeraetId>
+    <DatenpunktId>51</DatenpunktId>
+    <DatenpunktName>konf_ww_solltemp_rw</DatenpunktName>
+    <DatenpunktTyp>Integer</DatenpunktTyp>
+    <DatenpunktTypWert>0</DatenpunktTypWert>
+    <MinimalWert>10</MinimalWert>
+    <MaximalWert>95</MaximalWert>
+    <DatenpunktGruppe>viessmann.eventtypegroupHC.name.VScotHO1_72~HC1</DatenpunktGruppe>
+    <HeizkreisId>19179</HeizkreisId>
+    <Auslieferungswert>50</Auslieferungswert>
+    <IstLesbar>true</IstLesbar>
+    <IstSchreibbar>true</IstSchreibbar>
+  </DatenpunktTypInfo>
+</TypeInfoListe>`,
+		"GetTypeInfo")
+
+	// With an error
+	testSendRequestDeviceAny(assert,
+		// Send request and check result
+		func(v *Session, d *Device) bool {
+			_, err := d.GetTypeInfo(v)
+			return assert.NotNil(err)
+		},
+		// SOAP action
+		"GetTypeInfo",
+		expectedRequest,
+		// Response to reply
+		`<bad XML>`,
+		"GetTypeInfo with error")
 }
