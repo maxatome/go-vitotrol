@@ -50,6 +50,7 @@ var actions = map[string]Action{
 	"errors":        &errorsAction{},
 	"timesheet":     &timesheetAction{},
 	"set_timesheet": &setTimesheetAction{},
+	"remote_attrs":  &remoteAttrsAction{},
 }
 
 type authAction struct {
@@ -432,5 +433,27 @@ func (a *timesheetAction) Do(pOptions *Options, params []string) error {
 		}
 	}
 
+	return nil
+}
+
+// remoteAttrsAction implements the "remote_attrs" action.
+type remoteAttrsAction struct {
+	authAction
+}
+
+func (a *remoteAttrsAction) Do(pOptions *Options, params []string) error {
+	err := a.initVitotrol(pOptions)
+	if err != nil {
+		return err
+	}
+
+	list, err := a.d.GetTypeInfo(a.v)
+	if err != nil {
+		return err
+	}
+
+	for _, pAttrInfo := range list {
+		fmt.Printf("- %#v\n", *pAttrInfo)
+	}
 	return nil
 }

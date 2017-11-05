@@ -584,9 +584,14 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 //
 
 type AttributeInfo struct {
+	AttributeInfoBase
+	AttributeID uint32
+	EnumValues  map[uint32]string // only if AttributeType == "ENUM"
+}
+
+type AttributeInfoBase struct {
 	LocationID         uint32 `xml:"AnlageId"`
 	DeviceID           uint32 `xml:"GeraetId"`
-	AttributeID        uint32 `xml:"DatenpunktId"`
 	AttributeName      string `xml:"DatenpunktName"` // German one, more funny :)
 	AttributeType      string `xml:"DatenpunktTyp"`
 	AttributeTypeValue uint32 `xml:"DatenpunktTypWert"` // ???
@@ -599,10 +604,15 @@ type AttributeInfo struct {
 	Writtable          bool   `xml:"IstSchreibbar"`
 }
 
+type attributeInfo struct {
+	AttributeInfoBase
+	AttributeID string `xml:"DatenpunktId"`
+}
+
 type GetTypeInfoResponse struct {
 	GetTypeInfoResult struct {
 		ResultHeader
-		Attributes []*AttributeInfo `xml:"TypeInfoListe>DatenpunktTypInfo"`
+		Attributes []*attributeInfo `xml:"TypeInfoListe>DatenpunktTypInfo"`
 	} `xml:"Body>GetTypeInfoResponse>GetTypeInfoResult"`
 }
 
@@ -618,5 +628,42 @@ func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return resp.GetTypeInfoResult.Attributes, nil
+
+	enumAttrs := map[string]*AttributeInfo{}
+
+	list := make([]*AttributeInfo, 0, len(resp.GetTypeInfoResult.Attributes)/2)
+	for _, pInfo := range resp.GetTypeInfoResult.Attributes {
+		pFinalInfo := &AttributeInfo{
+			AttributeInfoBase: pInfo.AttributeInfoBase,
+		}
+
+		if pInfo.AttributeType == "ENUM" {
+			// 2 cases here: ATTR_ID alone or ATTR_ID-ENUM_IDX_VALUE
+			dashPos := strings.IndexByte(pInfo.AttributeID, '-')
+			if dashPos > 0 {
+				valIdx, err := strconv.ParseUint(pInfo.AttributeID[dashPos+1:], 10, 32)
+				if err != nil {
+					return nil, fmt.Errorf("Cannot extract index value from `%s'",
+						pInfo.AttributeID)
+				}
+				// Seems that enum value is located in MinValue...
+				enumAttrs[pInfo.AttributeID[:dashPos]].EnumValues[uint32(valIdx)] =
+					pInfo.MinValue
+				continue
+			}
+
+			pFinalInfo.EnumValues = map[uint32]string{}
+			enumAttrs[pInfo.AttributeID] = pFinalInfo
+		}
+
+		id, err := strconv.ParseUint(pInfo.AttributeID, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("Cannot parse AttributeID from `%s'",
+				pInfo.AttributeID)
+		}
+		pFinalInfo.AttributeID = uint32(id)
+
+		list = append(list, pFinalInfo)
+	}
+	return list, nil
 }

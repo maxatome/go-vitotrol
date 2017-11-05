@@ -50,7 +50,9 @@ ACTION & PARAMS can be:
                        wday is either a day (eg. mon) or a range of days
                        (eg. mon-wed or sat-mon)
                        The JSON content can be in a file with the syntax @file
-- errors               get the error history`)
+- errors               get the error history
+- remote_attrs         list server available attributes
+                         (for developing purpose)`)
 	}
 
 	var options Options
