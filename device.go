@@ -629,9 +629,14 @@ func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
 		return nil, err
 	}
 
-	enumAttrs := map[string]*AttributeInfo{}
-
+	type enumKey struct {
+		attrID   string
+		deviceID uint32
+	}
+	enumAttrs := map[enumKey]*AttributeInfo{}
 	list := make([]*AttributeInfo, 0, len(resp.GetTypeInfoResult.Attributes)/2)
+
+	// All enum values comes after their base/parent enum attribute
 	for _, pInfo := range resp.GetTypeInfoResult.Attributes {
 		pFinalInfo := &AttributeInfo{
 			AttributeInfoBase: pInfo.AttributeInfoBase,
@@ -647,13 +652,18 @@ func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
 						pInfo.AttributeID)
 				}
 				// Seems that enum value is located in MinValue...
-				enumAttrs[pInfo.AttributeID[:dashPos]].EnumValues[uint32(valIdx)] =
-					pInfo.MinValue
+				enumAttrs[enumKey{
+					attrID:   pInfo.AttributeID[:dashPos],
+					deviceID: pInfo.DeviceID,
+				}].EnumValues[uint32(valIdx)] = pInfo.MinValue
 				continue
 			}
 
 			pFinalInfo.EnumValues = map[uint32]string{}
-			enumAttrs[pInfo.AttributeID] = pFinalInfo
+			enumAttrs[enumKey{
+				attrID:   pInfo.AttributeID,
+				deviceID: pInfo.DeviceID,
+			}] = pFinalInfo
 		}
 
 		id, err := strconv.ParseUint(pInfo.AttributeID, 10, 32)
