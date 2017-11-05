@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sort"
 )
 
 // MainURL is the Viessmann Vitodata API URL.
@@ -180,6 +181,14 @@ func (v *Session) GetDevices() error {
 			})
 		}
 	}
+
+	// Make sure all devices are sorted
+	sort.SliceStable(v.Devices, func(i, j int) bool {
+		if v.Devices[i].LocationID == v.Devices[j].LocationID {
+			return v.Devices[i].DeviceID < v.Devices[j].DeviceID
+		}
+		return v.Devices[i].LocationID < v.Devices[j].LocationID
+	})
 
 	return nil
 }
