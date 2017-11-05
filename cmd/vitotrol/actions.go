@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/maxatome/go-vitotrol"
 	"io/ioutil"
+	"strconv"
 	"strings"
 )
 
@@ -41,6 +42,7 @@ type Action interface {
 }
 
 var actions = map[string]Action{
+	"devices":       &devicesAction{authAction: authAction{noDefaultDev: true}},
 	"list":          &listAction{},
 	"get":           &getAction{},
 	"rget":          &getAction{rget: true},
@@ -51,9 +53,10 @@ var actions = map[string]Action{
 }
 
 type authAction struct {
-	v       *vitotrol.Session
-	d       *vitotrol.Device
-	options *Options
+	v            *vitotrol.Session
+	d            *vitotrol.Device
+	noDefaultDev bool
+	options      *Options
 }
 
 func (a *authAction) initVitotrol(pOptions *Options) error {
@@ -74,19 +77,70 @@ func (a *authAction) initVitotrol(pOptions *Options) error {
 		return errors.New("No device found")
 	}
 
-	pDevice := &v.Devices[0]
-	if !pDevice.IsConnected {
-		return fmt.Errorf("Device %s@%s is not connected",
-			pDevice.DeviceName, pDevice.LocationName)
-	}
+	if !a.noDefaultDev {
+		var pDevice *vitotrol.Device
+		if pOptions.device == "" {
+			pDevice = &v.Devices[0]
+		} else if idx, err := strconv.Atoi(pOptions.device); err == nil {
+			// Check if a device exists with this ID
+			for _, device := range v.Devices {
+				if uint32(idx) == device.DeviceID {
+					pDevice = &device
+					break
+				}
+			}
 
-	if pOptions.verbose {
-		fmt.Printf("Working with device %s@%s\n",
-			pDevice.DeviceName, pDevice.LocationName)
+			// Else, take it as an index in devices array
+			if pDevice == nil {
+				if idx >= len(v.Devices) {
+					return fmt.Errorf(
+						"%d is not a device ID and too big to be an index "+
+							"(>= %d available devices).",
+						idx, len(v.Devices))
+				}
+				pDevice = &v.Devices[idx]
+			}
+		} else {
+			checkDevLoc := strings.ContainsRune(pOptions.device, '@')
+
+			// Check if a device exists with this name
+			for _, device := range v.Devices {
+				if pOptions.device == device.DeviceName {
+					pDevice = &device
+					break
+				}
+
+				// More checks: DeviceId@LocationID & DeviceName@LocationName
+				if checkDevLoc {
+					// DeviceId@LocationID
+					if pOptions.device == fmt.Sprintf("%d@%d",
+						device.DeviceID, device.LocationID) {
+						pDevice = &device
+						break
+					}
+
+					// DeviceName@LocationName
+					if pOptions.device == device.DeviceName+"@"+device.LocationName {
+						pDevice = &device
+						break
+					}
+				}
+			}
+
+			if pDevice == nil {
+				return fmt.Errorf("Cannot find device named `%s'", pOptions.device)
+			}
+		}
+
+		if pOptions.verbose {
+			fmt.Printf("Working with device %s@%s\n",
+				pDevice.DeviceName, pDevice.LocationName)
+		}
+
+		a.d = pDevice
 	}
 
 	a.v = v
-	a.d = pDevice
 	a.options = pOptions
 
 	return nil
@@ -94,6 +148,32 @@ func (a *authAction) initVitotrol(pOptions *Options) error {
 
 func (a *authAction) NeedAuth() bool {
 	return true
+}
+
+// devicesAction implements the "devices" action.
+type devicesAction struct {
+	authAction
+}
+
+func (a *devicesAction) Do(pOptions *Options, params []string) error {
+	err := a.initVitotrol(pOptions)
+	if err != nil {
+		return err
+	}
+
+	for idx, device := range a.v.Devices {
+		fmt.Printf(`Index %d
+  LocationName (LocationID): %s (%d)
+      DeviceName (DeviceID): %s (%d)
+                   HasError: %v
+                IsConnected: %v
+`, idx,
+			device.LocationName, device.LocationID,
+			device.DeviceName, device.DeviceID,
+			device.HasError,
+			device.IsConnected)
+	}
+	return nil
 }
 
 // listAction implements the "list" action.

@@ -25,6 +25,7 @@ type Options struct {
 	verbose    bool
 	debug      bool
 	jsonOutput bool
+	device     string
 }
 
 func main() {
@@ -33,6 +34,7 @@ func main() {
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr, `
 ACTION & PARAMS can be:
+- devices              list all available devices
 - list [attrs|timesheets]  list attribute (default) or timesheet names
 - get ATTR_NAME ...    get the value of attributes ATTR_NAME, ... on vitodata
                          server
@@ -56,6 +58,9 @@ ACTION & PARAMS can be:
 	flag.StringVar(&options.login, "login", "", "login on vitotrol API")
 	flag.StringVar(&options.password, "password", "", "password on vitotrol API")
 	flag.StringVar(&config, "config", "", "login+password config file")
+	flag.StringVar(&options.device, "device", "0",
+		"DeviceID, index, DeviceName, "+
+			"DeviceId@LocationID, DeviceName@LocationName (see `devices' action)")
 	flag.BoolVar(&options.verbose, "verbose", false, "print verbose information")
 	flag.BoolVar(&options.debug, "debug", false, "print debug information")
 	flag.BoolVar(&options.jsonOutput, "json", false,

@@ -19,6 +19,7 @@ Only requests I really need are currently implemented:
 - GetErrorHistory
 - GetTimesheet
 - WriteTimesheetData
+- GetTypeInfo
 
 Any pull-request is welcome.
 
@@ -43,19 +44,24 @@ See `cmd/vitotrol/*.go` for an example of use.
 Executable `vitotrol` usage follows:
 
 ```
-usage: vitotrol [OPTIONS] ACTION [PARAMS]
+usage: ./vitotrol [OPTIONS] ACTION [PARAMS]
   -config string
-    	login+password config file
+        login+password config file
   -debug
-    	print debug information
+        print debug information
+  -device string
+        DeviceID, index, DeviceName, DeviceId@LocationID, DeviceName@LocationName (see `devices' action)
+  -json
+        used by `timesheet' action to display timesheets using JSON format
   -login string
-    	login on vitotrol API
+        login on vitotrol API
   -password string
-    	password on vitotrol API
+        password on vitotrol API
   -verbose
-    	print verbose information
+        print verbose information
 
 ACTION & PARAMS can be:
+- devices              list all available devices
 - list [attrs|timesheets]  list attribute (default) or timesheet names
 - get ATTR_NAME ...    get the value of attributes ATTR_NAME, ... on vitodata
                          server
@@ -66,10 +72,10 @@ ACTION & PARAMS can be:
 - set ATTR_NAME VALUE  set the value of attribute ATTR_NAME to VALUE
 - timesheet TIMESHEET ...
                        get the timesheet TIMESHEET data
-- set_timesheet TIMESHEET {"wday":[{"from":630,"to":2200},...],...}
+- set_timesheet TIMESHEET '{"wday":[{"from":630,"to":2200},...],...}'
                        replace the whole timesheet TIMESHEET
-		         wdays are mon, tue, wed, thu, fri, sat and sun
-			 or range of days like mon-fri or sat-mon
+                       wday is either a day (eg. mon) or a range of days
+                       (eg. mon-wed or sat-mon)
                        The JSON content can be in a file with the syntax @file
 - errors               get the error history
 ```
