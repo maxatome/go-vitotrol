@@ -599,7 +599,7 @@ type AttributeInfoBase struct {
 	HeatingCircuitID   uint32 `xml:"HeizkreisId"`
 	DefaultValue       string `xml:"Auslieferungswert"`
 	Readable           bool   `xml:"IstLesbar"`
-	Writtable          bool   `xml:"IstSchreibbar"`
+	Writable           bool   `xml:"IstSchreibbar"`
 }
 
 type attributeInfo struct {
