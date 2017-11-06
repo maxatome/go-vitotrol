@@ -9,6 +9,7 @@ import (
 // Singletons matching Vitodata™ types.
 var (
 	TypeDouble    = (*VitodataDouble)(nil)
+	TypeInteger   = (*VitodataInteger)(nil)
 	TypeDate      = (*VitodataDate)(nil)
 	TypeString    = (*VitodataString)(nil)
 	TypeOnOffEnum = NewEnum([]string{ // 0 -> 1
@@ -19,6 +20,13 @@ var (
 		"disabled",
 		"enabled",
 	})
+
+	TypeNames = map[string]VitodataType{
+		TypeDouble.Type():  TypeDouble,
+		TypeInteger.Type(): TypeInteger,
+		TypeDate.Type():    TypeDate,
+		TypeString.Type():  TypeString,
+	}
 )
 
 // ErrEnumInvalidValue is returned when trying to convert to an enum a
@@ -61,6 +69,40 @@ func (v *VitodataDouble) Vitodata2HumanValue(value string) (string, error) {
 // returns it as a float64.
 func (v *VitodataDouble) Vitodata2NativeValue(value string) (interface{}, error) {
 	num, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return nil, err
+	}
+	return num, nil
+}
+
+// A VitodataInteger represent the Vitodata™ Integer type.
+type VitodataInteger struct{}
+
+// Type returns the "human" name of the type.
+func (v *VitodataInteger) Type() string {
+	return "Integer"
+}
+
+// Human2VitodataValue checks that the value is an integer and returns
+// it after reformatting.
+func (v *VitodataInteger) Human2VitodataValue(value string) (string, error) {
+	num, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatInt(num, 10), nil
+}
+
+// Vitodata2HumanValue checks that the value is an integer and returns
+// it after reformatting.
+func (v *VitodataInteger) Vitodata2HumanValue(value string) (string, error) {
+	return v.Human2VitodataValue(value)
+}
+
+// Vitodata2NativeValue extract the number from the passed string and
+// returns it as an int64.
+func (v *VitodataInteger) Vitodata2NativeValue(value string) (interface{}, error) {
+	num, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return nil, err
 	}

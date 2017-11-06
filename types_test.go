@@ -39,6 +39,39 @@ func TestVitodataDouble(t *testing.T) {
 	assert.NotNil(err)
 }
 
+func TestVitodataInteger(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal("Integer", TypeInteger.Type())
+
+	// Human2VitodataValue
+	str, err := TypeInteger.Human2VitodataValue("12")
+	assert.Equal("12", str)
+	assert.Nil(err)
+
+	str, err = TypeInteger.Human2VitodataValue("foo")
+	assert.Equal("", str)
+	assert.NotNil(err)
+
+	// Vitodata2HumanValue
+	str, err = TypeInteger.Vitodata2HumanValue("00012")
+	assert.Equal("12", str)
+	assert.Nil(err)
+
+	str, err = TypeInteger.Vitodata2HumanValue("foo")
+	assert.Equal("", str)
+	assert.NotNil(err)
+
+	// Vitodata2NativeValue
+	num, err := TypeInteger.Vitodata2NativeValue("00012")
+	assert.Equal(int64(12), num)
+	assert.Nil(err)
+
+	num, err = TypeInteger.Vitodata2NativeValue("foo")
+	assert.Nil(num)
+	assert.NotNil(err)
+}
+
 func TestVitodataDate(t *testing.T) {
 	assert := assert.New(t)
 
