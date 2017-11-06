@@ -8,16 +8,6 @@ import (
 	"path"
 )
 
-var allowedActions = map[string]bool{
-	"errors":        true,
-	"get":           true,
-	"list":          true,
-	"rget":          true,
-	"set":           true,
-	"timesheet":     true,
-	"set_timesheet": true,
-}
-
 // Options gathers user parameters together.
 type Options struct {
 	login      string
