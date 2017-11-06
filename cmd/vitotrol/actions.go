@@ -10,20 +10,6 @@ import (
 	"strings"
 )
 
-func checkAttributeAccess(attrName string, reqAccess vitotrol.AttrAccess) (vitotrol.AttrID, error) {
-	attrID, ok := vitotrol.AttributesNames2IDs[attrName]
-	if !ok {
-		return vitotrol.NoAttr, fmt.Errorf("unknown attribute `%s'", attrName)
-	}
-
-	if (vitotrol.AttributesRef[attrID].Access & reqAccess) != reqAccess {
-		return vitotrol.NoAttr, fmt.Errorf("attribute `%s' is not %s",
-			attrName, vitotrol.AccessToStr[reqAccess])
-	}
-
-	return attrID, nil
-}
-
 func existTimesheetName(tsName string) (vitotrol.TimesheetID, error) {
 	tID, ok := vitotrol.TimesheetsNames2IDs[tsName]
 	if !ok {
@@ -151,6 +137,100 @@ func (a *authAction) NeedAuth() bool {
 	return true
 }
 
+type foreignAttrs struct {
+	authAction
+	cachePopulated bool
+}
+
+func (f *foreignAttrs) checkAttributeAccess(attrName string, reqAccess vitotrol.AttrAccess) (vitotrol.AttrID, error) {
+	var attrID vitotrol.AttrID
+	var ok bool
+
+	for {
+		id, err := strconv.ParseUint(attrName, 0, 16)
+		if err == nil {
+			attrID = vitotrol.AttrID(id)
+			_, ok = vitotrol.AttributesRef[attrID]
+		} else {
+			attrID, ok = vitotrol.AttributesNames2IDs[attrName]
+		}
+
+		if ok || f.cachePopulated {
+			break
+		}
+		f.populateCache()
+	}
+
+	if !ok {
+		return vitotrol.NoAttr, fmt.Errorf("unknown attribute `%s'", attrName)
+	}
+
+	if (vitotrol.AttributesRef[attrID].Access & reqAccess) != reqAccess {
+		return vitotrol.NoAttr, fmt.Errorf("attribute `%s' is not %s",
+			attrName, vitotrol.AccessToStr[reqAccess])
+	}
+
+	return attrID, nil
+}
+
+func (f *foreignAttrs) populateCache() {
+	f.cachePopulated = true
+
+	attrs, err := f.d.GetTypeInfo(f.v)
+	if err != nil {
+		fmt.Printf("GetTypeInfo failed: %s", err)
+		return
+	}
+
+	for _, pAttrInfo := range attrs {
+		attrID := pAttrInfo.AttributeID
+		if vitotrol.AttributesRef[attrID] == nil {
+			// Unknown attribute
+			pType := vitotrol.TypeNames[pAttrInfo.AttributeType]
+			if pType == nil {
+				if pAttrInfo.AttributeType != "ENUM" {
+					// No warning for type used for timesheets...
+					if pAttrInfo.AttributeType != "CircuitTime" {
+						fmt.Printf("populateCache: unrecognized type %s for attribute "+
+							"%s-0x%04x. Discard it.\n",
+							pAttrInfo.AttributeType, pAttrInfo.AttributeName, attrID)
+					}
+					continue
+				}
+
+				var maxIdx uint32
+				for idx := range pAttrInfo.EnumValues {
+					if idx > maxIdx {
+						maxIdx = idx
+					}
+				}
+				enumValues := make([]string, maxIdx+1)
+				for idx, value := range pAttrInfo.EnumValues {
+					enumValues[idx] = value
+				}
+				pType = vitotrol.NewEnum(enumValues)
+			}
+
+			ref := vitotrol.AttrRef{
+				Type: pType,
+				Name: fmt.Sprintf("%s-0x%04x", pAttrInfo.AttributeName, attrID),
+				Doc:  pAttrInfo.AttributeName,
+			}
+
+			if pAttrInfo.Readable {
+				ref.Access = vitotrol.ReadOnly
+			}
+			if pAttrInfo.Writable {
+				ref.Access |= vitotrol.WriteOnly
+			}
+
+			vitotrol.AttributesRef[attrID] = &ref
+			vitotrol.AttributesNames2IDs[ref.Name] = attrID
+			vitotrol.Attributes = append(vitotrol.Attributes, attrID)
+		}
+	}
+}
+
 // devicesAction implements the "devices" action.
 type devicesAction struct {
 	authAction
@@ -206,13 +286,18 @@ func (a *listAction) Do(pOptions *Options, params []string) error {
 
 // getAction implements the "get" and "rget" actions.
 type getAction struct {
-	authAction
+	foreignAttrs
 	rget bool
 }
 
 func (a *getAction) Do(pOptions *Options, params []string) error {
 	if len(params) == 0 {
 		return errors.New("at least one PARAM is missing")
+	}
+
+	err := a.initVitotrol(pOptions)
+	if err != nil {
+		return err
 	}
 
 	var attrs []vitotrol.AttrID
@@ -223,16 +308,11 @@ func (a *getAction) Do(pOptions *Options, params []string) error {
 		attrs = make([]vitotrol.AttrID, len(params))
 		var err error
 		for idx, attrName := range params {
-			attrs[idx], err = checkAttributeAccess(attrName, vitotrol.ReadOnly)
+			attrs[idx], err = a.checkAttributeAccess(attrName, vitotrol.ReadOnly)
 			if err != nil {
 				return err
 			}
 		}
-	}
-
-	err := a.initVitotrol(pOptions)
-	if err != nil {
-		return err
 	}
 
 	if a.rget {
@@ -257,7 +337,7 @@ func (a *getAction) Do(pOptions *Options, params []string) error {
 
 // setAction implements the "set" action.
 type setAction struct {
-	authAction
+	foreignAttrs
 }
 
 func (a *setAction) Do(pOptions *Options, params []string) error {
@@ -265,9 +345,14 @@ func (a *setAction) Do(pOptions *Options, params []string) error {
 		return errors.New("PARAMS must be a list of pairs: ATTR_NAME, VALUE")
 	}
 
+	err := a.initVitotrol(pOptions)
+	if err != nil {
+		return err
+	}
+
 	attrsValues := make(map[vitotrol.AttrID]string, len(params)/2)
 	for idx := 0; idx < len(params); idx += 2 {
-		attrID, err := checkAttributeAccess(params[idx], vitotrol.WriteOnly)
+		attrID, err := a.checkAttributeAccess(params[idx], vitotrol.WriteOnly)
 		if err != nil {
 			return err
 		}
@@ -280,11 +365,6 @@ func (a *setAction) Do(pOptions *Options, params []string) error {
 		}
 
 		attrsValues[attrID] = value
-	}
-
-	err := a.initVitotrol(pOptions)
-	if err != nil {
-		return err
 	}
 
 	// Set them all
