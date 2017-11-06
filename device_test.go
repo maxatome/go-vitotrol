@@ -670,8 +670,6 @@ func TestGetTypeInfo(t *testing.T) {
 			return assert.Equal([]*AttributeInfo{
 				&AttributeInfo{
 					AttributeInfoBase: AttributeInfoBase{
-						LocationID:         88888,
-						DeviceID:           77777,
 						AttributeName:      "anzahl_brennerstunden_r",
 						AttributeType:      "Double",
 						AttributeTypeValue: 0,
@@ -687,8 +685,6 @@ func TestGetTypeInfo(t *testing.T) {
 				},
 				&AttributeInfo{
 					AttributeInfoBase: AttributeInfoBase{
-						LocationID:         99999,
-						DeviceID:           66666,
 						AttributeName:      "konf_ww_solltemp_rw",
 						AttributeType:      "Integer",
 						AttributeTypeValue: 0,
@@ -704,8 +700,6 @@ func TestGetTypeInfo(t *testing.T) {
 				},
 				&AttributeInfo{
 					AttributeInfoBase: AttributeInfoBase{
-						LocationID:         99999,
-						DeviceID:           66666,
 						AttributeName:      "zustand_interne_pumpe_r",
 						AttributeType:      "ENUM",
 						AttributeTypeValue: 0,
@@ -748,8 +742,8 @@ func TestGetTypeInfo(t *testing.T) {
     <IstSchreibbar>false</IstSchreibbar>
   </DatenpunktTypInfo>
   <DatenpunktTypInfo>
-    <AnlageId>99999</AnlageId>
-    <GeraetId>66666</GeraetId>
+    <AnlageId>88888</AnlageId>
+    <GeraetId>77777</GeraetId>
     <DatenpunktId>51</DatenpunktId>
     <DatenpunktName>konf_ww_solltemp_rw</DatenpunktName>
     <DatenpunktTyp>Integer</DatenpunktTyp>
@@ -763,8 +757,8 @@ func TestGetTypeInfo(t *testing.T) {
     <IstSchreibbar>true</IstSchreibbar>
   </DatenpunktTypInfo>
   <DatenpunktTypInfo>
-    <AnlageId>99999</AnlageId>
-    <GeraetId>66666</GeraetId>
+    <AnlageId>88888</AnlageId>
+    <GeraetId>77777</GeraetId>
     <DatenpunktId>245</DatenpunktId>
     <DatenpunktName>zustand_interne_pumpe_r</DatenpunktName>
     <DatenpunktTyp>ENUM</DatenpunktTyp>
@@ -778,8 +772,8 @@ func TestGetTypeInfo(t *testing.T) {
     <IstSchreibbar>false</IstSchreibbar>
   </DatenpunktTypInfo>
   <DatenpunktTypInfo>
-    <AnlageId>99999</AnlageId>
-    <GeraetId>66666</GeraetId>
+    <AnlageId>88888</AnlageId>
+    <GeraetId>77777</GeraetId>
     <DatenpunktId>245-0</DatenpunktId>
     <DatenpunktName>zustand_interne_pumpe_r</DatenpunktName>
     <DatenpunktTyp>ENUM</DatenpunktTyp>
@@ -793,8 +787,8 @@ func TestGetTypeInfo(t *testing.T) {
     <IstSchreibbar>false</IstSchreibbar>
   </DatenpunktTypInfo>
   <DatenpunktTypInfo>
-    <AnlageId>99999</AnlageId>
-    <GeraetId>66666</GeraetId>
+    <AnlageId>88888</AnlageId>
+    <GeraetId>77777</GeraetId>
     <DatenpunktId>245-1</DatenpunktId>
     <DatenpunktName>zustand_interne_pumpe_r</DatenpunktName>
     <DatenpunktTyp>ENUM</DatenpunktTyp>

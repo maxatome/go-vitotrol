@@ -585,13 +585,11 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 
 type AttributeInfo struct {
 	AttributeInfoBase
-	AttributeID uint32
+	AttributeID AttrID
 	EnumValues  map[uint32]string // only if AttributeType == "ENUM"
 }
 
 type AttributeInfoBase struct {
-	LocationID         uint32 `xml:"AnlageId"`
-	DeviceID           uint32 `xml:"GeraetId"`
 	AttributeName      string `xml:"DatenpunktName"` // German one, more funny :)
 	AttributeType      string `xml:"DatenpunktTyp"`
 	AttributeTypeValue uint32 `xml:"DatenpunktTypWert"` // ???
@@ -633,7 +631,7 @@ func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
 		attrID   string
 		deviceID uint32
 	}
-	enumAttrs := map[enumKey]*AttributeInfo{}
+	enumAttrs := map[string]*AttributeInfo{}
 	list := make([]*AttributeInfo, 0, len(resp.GetTypeInfoResult.Attributes)/2)
 
 	// All enum values comes after their base/parent enum attribute
@@ -652,26 +650,21 @@ func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
 						pInfo.AttributeID)
 				}
 				// Seems that enum value is located in MinValue...
-				enumAttrs[enumKey{
-					attrID:   pInfo.AttributeID[:dashPos],
-					deviceID: pInfo.DeviceID,
-				}].EnumValues[uint32(valIdx)] = pInfo.MinValue
+				enumAttrs[pInfo.AttributeID[:dashPos]].
+					EnumValues[uint32(valIdx)] = pInfo.MinValue
 				continue
 			}
 
 			pFinalInfo.EnumValues = map[uint32]string{}
-			enumAttrs[enumKey{
-				attrID:   pInfo.AttributeID,
-				deviceID: pInfo.DeviceID,
-			}] = pFinalInfo
+			enumAttrs[pInfo.AttributeID] = pFinalInfo
 		}
 
-		id, err := strconv.ParseUint(pInfo.AttributeID, 10, 32)
+		id, err := strconv.ParseUint(pInfo.AttributeID, 10, 16)
 		if err != nil {
 			return nil, fmt.Errorf("Cannot parse AttributeID from `%s'",
 				pInfo.AttributeID)
 		}
-		pFinalInfo.AttributeID = uint32(id)
+		pFinalInfo.AttributeID = AttrID(id)
 
 		list = append(list, pFinalInfo)
 	}
