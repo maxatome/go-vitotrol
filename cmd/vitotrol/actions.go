@@ -303,6 +303,7 @@ func (a *getAction) Do(pOptions *Options, params []string) error {
 	var attrs []vitotrol.AttrID
 	// Special case -> all attributes
 	if len(params) == 1 && params[0] == "all" {
+		a.populateCache()
 		attrs = vitotrol.Attributes
 	} else {
 		attrs = make([]vitotrol.AttrID, len(params))
