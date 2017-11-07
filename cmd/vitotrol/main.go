@@ -32,6 +32,9 @@ ACTION & PARAMS can be:
 - rget ATTR_NAME ...   refresh then get the value of attributes ATTR_NAME, ...
                          on vitodata server
 - rget all             refresh than get all known attributes on vitodata server
+- bget ATTR_IDX ...    get the value of attributes ATTR_IDX, ... on vitodata
+                         server without checking their validity before (for
+                         developing purpose)
 - set ATTR_NAME VALUE  set the value of attribute ATTR_NAME to VALUE
 - timesheet TIMESHEET ...
                        get the timesheet TIMESHEET data

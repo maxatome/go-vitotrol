@@ -32,6 +32,7 @@ var actions = map[string]Action{
 	"list":          &listAction{},
 	"get":           &getAction{},
 	"rget":          &getAction{rget: true},
+	"bget":          &getAction{bget: true},
 	"set":           &setAction{},
 	"errors":        &errorsAction{},
 	"timesheet":     &timesheetAction{},
@@ -288,6 +289,7 @@ func (a *listAction) Do(pOptions *Options, params []string) error {
 type getAction struct {
 	foreignAttrs
 	rget bool
+	bget bool
 }
 
 func (a *getAction) Do(pOptions *Options, params []string) error {
@@ -309,9 +311,27 @@ func (a *getAction) Do(pOptions *Options, params []string) error {
 		attrs = make([]vitotrol.AttrID, len(params))
 		var err error
 		for idx, attrName := range params {
-			attrs[idx], err = a.checkAttributeAccess(attrName, vitotrol.ReadOnly)
-			if err != nil {
-				return err
+			if a.bget {
+				var id uint64
+				id, err = strconv.ParseUint(attrName, 0, 16)
+				if err != nil {
+					return err
+				}
+				attrs[idx] = vitotrol.AttrID(id)
+
+				// Create a fake String entry for this attribute
+				if _, ok := vitotrol.AttributesRef[vitotrol.AttrID(id)]; !ok {
+					vitotrol.AttributesRef[vitotrol.AttrID(id)] = &vitotrol.AttrRef{
+						Type:   vitotrol.TypeString,
+						Access: vitotrol.ReadOnly,
+						Name:   fmt.Sprintf("0x%04x", id),
+					}
+				}
+			} else {
+				attrs[idx], err = a.checkAttributeAccess(attrName, vitotrol.ReadOnly)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
