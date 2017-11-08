@@ -308,11 +308,14 @@ func (a *getAction) Do(pOptions *Options, params []string) error {
 		a.populateCache()
 		attrs = vitotrol.Attributes
 	} else {
-		attrs = make([]vitotrol.AttrID, len(params))
 		var err error
-		for idx, attrName := range params {
-			if a.bget {
-				var id uint64
+		attrs = make([]vitotrol.AttrID, len(params))
+
+		if a.bget {
+			a.populateCache()
+
+			var id uint64
+			for idx, attrName := range params {
 				id, err = strconv.ParseUint(attrName, 0, 16)
 				if err != nil {
 					return err
@@ -327,7 +330,9 @@ func (a *getAction) Do(pOptions *Options, params []string) error {
 						Name:   fmt.Sprintf("0x%04x", id),
 					}
 				}
-			} else {
+			}
+		} else {
+			for idx, attrName := range params {
 				attrs[idx], err = a.checkAttributeAccess(attrName, vitotrol.ReadOnly)
 				if err != nil {
 					return err
