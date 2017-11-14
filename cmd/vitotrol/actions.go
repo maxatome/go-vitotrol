@@ -33,6 +33,7 @@ var actions = map[string]Action{
 	"get":           &getAction{},
 	"rget":          &getAction{rget: true},
 	"bget":          &getAction{bget: true},
+	"rbget":         &getAction{rget: true, bget: true},
 	"set":           &setAction{},
 	"errors":        &errorsAction{},
 	"timesheet":     &timesheetAction{},
