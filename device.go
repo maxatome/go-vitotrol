@@ -553,7 +553,11 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 			break
 		}
 
-		if status == 4 {
+		// End when status == 4
+		if status >= 4 {
+			if status != 4 {
+				ch <- fmt.Errorf("Unexpected status %d", status)
+			}
 			break
 		}
 
