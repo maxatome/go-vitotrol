@@ -1,12 +1,13 @@
 package vitotrol
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
-func TestResultHeader(t *testing.T) {
-	assert := assert.New(t)
+func TestResultHeader(tt *testing.T) {
+	t := td.NewT(tt)
 
 	rh := &ResultHeader{
 		ErrorNum: 0,
@@ -15,13 +16,13 @@ func TestResultHeader(t *testing.T) {
 
 	var _ error = rh
 
-	assert.Equal("No error [#0]", rh.Error())
-	assert.False(rh.IsError())
+	t.CmpDeeply(rh.Error(), "No error [#0]")
+	t.False(rh.IsError())
 
 	rh = &ResultHeader{
 		ErrorNum: 42,
 		ErrorStr: "Big error",
 	}
-	assert.Equal("Big error [#42]", rh.Error())
-	assert.True(rh.IsError())
+	t.CmpDeeply(rh.Error(), "Big error [#42]")
+	t.True(rh.IsError())
 }

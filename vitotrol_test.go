@@ -3,12 +3,13 @@ package vitotrol
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
 var (
@@ -25,14 +26,16 @@ const (
 	respFooter = `</soap:Body></soap:Envelope>`
 )
 
-func extractRequestBody(assert *assert.Assertions, r *http.Request, reqBody interface{}, testName string) bool {
+func extractRequestBody(t *td.T, r *http.Request, reqBody interface{}, testName string) bool {
+	t.Helper()
+
 	bodyRaw, err := ioutil.ReadAll(r.Body)
-	if !assert.Nil(err, "%s: request body ReadAll OK") {
+	if !t.CmpNoError(err, "%s: request body ReadAll OK", testName) {
 		return false
 	}
 
 	err = xml.Unmarshal(bodyRaw, reqBody)
-	if !assert.Nil(err, "%s: request body Unmarshal OK") {
+	if !t.CmpNoError(err, "%s: request body Unmarshal OK", testName) {
 		return false
 	}
 
@@ -45,16 +48,18 @@ func virginInstance(pOrig interface{}) interface{} {
 		Interface()
 }
 
-func testSendRequestAny(assert *assert.Assertions,
+func testSendRequestAny(t *td.T,
 	sendReq func(v *Session) bool, soapAction string,
 	expectedRequest interface{}, serverResponse string,
 	testName string) bool {
+	t.Helper()
+
 	ts := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			// Check header
-			assert.Equal(soapURL+soapAction, r.Header.Get("SOAPAction"),
+			t.CmpDeeply(r.Header.Get("SOAPAction"), soapURL+soapAction,
 				"%s: SOAPAction header matches", testName)
-			assert.Equal("text/xml; charset=utf-8", r.Header.Get("Content-Type"),
+			t.CmpDeeply(r.Header.Get("Content-Type"), "text/xml; charset=utf-8",
 				"%s: Content-Type header matches", testName)
 
 			if cookie := r.Header.Get("Cookie"); cookie != "" {
@@ -63,11 +68,11 @@ func testSendRequestAny(assert *assert.Assertions,
 
 			// Extract request body in the same struct type as the expectedRequest
 			recvReq := virginInstance(expectedRequest)
-			if !extractRequestBody(assert, r, recvReq, testName) {
+			if !extractRequestBody(t, r, recvReq, testName) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			assert.Equal(expectedRequest, recvReq, "%s: request OK", testName)
+			t.CmpDeeply(recvReq, expectedRequest, "%s: request OK", testName)
 
 			// Send response
 			fmt.Fprintln(w, respHeader+serverResponse+respFooter)
@@ -96,8 +101,8 @@ func (r *TestResponse) ResultHeader() *ResultHeader {
 	return &r.TestResult.ResultHeader
 }
 
-func TestSendRequestErrors(t *testing.T) {
-	assert := assert.New(t)
+func TestSendRequestErrors(tt *testing.T) {
+	t := td.NewT(tt)
 
 	v := &Session{}
 
@@ -105,12 +110,12 @@ func TestSendRequestErrors(t *testing.T) {
 	MainURL = ":"
 	var resp TestResponse
 	err := v.sendRequest("bad", `<xxx></xxx>`, &resp)
-	assert.NotNil(err)
+	t.CmpError(err)
 
 	// bad scheme -> Do request will fail
 	MainURL = "bad-scheme:..."
 	err = v.sendRequest("bad", `<xxx></xxx>`, &resp)
-	assert.NotNil(err)
+	t.CmpError(err)
 
 	// HTTP status error
 	ts := httptest.NewServer(http.HandlerFunc(
@@ -122,11 +127,11 @@ func TestSendRequestErrors(t *testing.T) {
 
 	MainURL = ts.URL
 	err = v.sendRequest("bad", `<xxx></xxx>`, &resp)
-	assert.NotNil(err)
+	t.CmpError(err)
 }
 
-func TestSendRequest(t *testing.T) {
-	assert := assert.New(t)
+func TestSendRequest(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type testRequest struct {
 		Foo string `xml:"Body>Test>Foo"`
@@ -134,7 +139,7 @@ func TestSendRequest(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			v.Cookies = []string{"foo=123", "bar=456"}
@@ -145,18 +150,19 @@ func TestSendRequest(t *testing.T) {
   <Foo>foo</Foo>
   <Bar>bar</Bar>
 </Test>`, &resp)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
-			return assert.Equal(&TestResponse{
-				TestResult: TestResult{
-					ResultHeader: ResultHeader{
-						ErrorNum: 0,
-						ErrorStr: "Kein Fehler",
+			return t.CmpDeeply(&resp,
+				&TestResponse{
+					TestResult: TestResult{
+						ResultHeader: ResultHeader{
+							ErrorNum: 0,
+							ErrorStr: "Kein Fehler",
+						},
+						Pipo: "hello",
 					},
-					Pipo: "hello",
-				},
-			}, &resp)
+				})
 		},
 		// SOAP action
 		"foobar",
@@ -176,7 +182,7 @@ func TestSendRequest(t *testing.T) {
 		"sendRequest")
 
 	// XML decoding error
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			v.Debug = true
@@ -187,7 +193,7 @@ func TestSendRequest(t *testing.T) {
   <Foo>foo</Foo>
   <Bar>bar</Bar>
 </Test>`, &resp)
-			return assert.NotNil(err)
+			return t.CmpError(err)
 		},
 		// SOAP action
 		"foobar",
@@ -201,7 +207,7 @@ func TestSendRequest(t *testing.T) {
 		"sendRequest XML error")
 
 	// Applicative error
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			var resp TestResponse
@@ -210,12 +216,14 @@ func TestSendRequest(t *testing.T) {
   <Foo>foo</Foo>
   <Bar>bar</Bar>
 </Test>`, &resp)
-			if !assert.NotNil(err) || !assert.IsType(&ResultHeader{}, err) {
+			if !t.CmpError(err) || !t.Isa(err, &ResultHeader{}) {
 				return false
 			}
-			res := err.(*ResultHeader)
-			return assert.Equal(42, res.ErrorNum) &&
-				assert.Equal("ERROR!!!", res.ErrorStr)
+			return t.CmpDeeply(err.(*ResultHeader),
+				td.Struct(&ResultHeader{
+					ErrorNum: 42,
+					ErrorStr: "ERROR!!!",
+				}, nil))
 		},
 		// SOAP action
 		"foobar",
@@ -238,8 +246,8 @@ func TestSendRequest(t *testing.T) {
 //
 // Login
 //
-func TestLogin(t *testing.T) {
-	assert := assert.New(t)
+func TestLogin(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type loginRequest struct {
 		AppID      string `xml:"Body>Login>AppId"`
@@ -258,10 +266,10 @@ func TestLogin(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
-			return assert.Nil(v.Login("pipo", "bingo"))
+			return t.CmpNoError(v.Login("pipo", "bingo"))
 		},
 		// SOAP action
 		"Login",
@@ -280,10 +288,10 @@ func TestLogin(t *testing.T) {
 		"Login")
 
 	// With an error
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
-			return assert.NotNil(v.Login("pipo", "bingo"))
+			return t.CmpError(v.Login("pipo", "bingo"))
 		},
 		// SOAP action
 		"Login",
@@ -296,8 +304,8 @@ func TestLogin(t *testing.T) {
 //
 // GetDevices
 //
-func TestGetDevices(t *testing.T) {
-	assert := assert.New(t)
+func TestGetDevices(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type getDevicesRequest struct {
 		Dummy string `xml:"Body>GetDevices,omitempty"`
@@ -306,26 +314,26 @@ func TestGetDevices(t *testing.T) {
 	expectedRequest := &getDevicesRequest{}
 
 	// No problem
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			err := v.GetDevices()
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
-			return assert.Equal([]Device{
-				{
-					LocationID:   31456,
-					LocationName: "Paris",
-					DeviceID:     40213,
-					DeviceName:   "VT 200 (HO1C)",
-					HasError:     true,
-					IsConnected:  true,
-					Attributes:   map[AttrID]*Value{},
-					Timesheets:   map[TimesheetID]map[string]TimeslotSlice{},
-				},
-			},
-				v.Devices)
+			return t.CmpDeeply(v.Devices,
+				[]Device{
+					{
+						LocationID:   31456,
+						LocationName: "Paris",
+						DeviceID:     40213,
+						DeviceName:   "VT 200 (HO1C)",
+						HasError:     true,
+						IsConnected:  true,
+						Attributes:   map[AttrID]*Value{},
+						Timesheets:   map[TimesheetID]map[string]TimeslotSlice{},
+					},
+				})
 		},
 		// SOAP action
 		"GetDevices",
@@ -370,10 +378,10 @@ func TestGetDevices(t *testing.T) {
 		"GetDevices")
 
 	// With an error
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
-			return assert.NotNil(v.GetDevices())
+			return t.CmpError(v.GetDevices())
 		},
 		// SOAP action
 		"GetDevices",
@@ -404,15 +412,15 @@ var requestRefreshStatusTest = testAction{
 </RequestRefreshStatusResponse>`,
 }
 
-func TestRequestRefreshStatus(t *testing.T) {
-	assert := assert.New(t)
+func TestRequestRefreshStatus(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// No problem
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			status, err := v.RequestRefreshStatus("123456789")
-			return assert.Nil(err) && assert.Equal(4, status)
+			return t.CmpNoError(err) && t.CmpDeeply(status, 4)
 		},
 		// SOAP action
 		"RequestRefreshStatus",
@@ -422,11 +430,11 @@ func TestRequestRefreshStatus(t *testing.T) {
 		"RequestRefreshStatus")
 
 	// With an error
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			_, err := v.RequestRefreshStatus("123456789")
-			return assert.NotNil(err)
+			return t.CmpError(err)
 		},
 		// SOAP action
 		"RequestRefreshStatus",
@@ -457,15 +465,15 @@ var requestWriteStatusTest = testAction{
 </RequestWriteStatusResponse>`,
 }
 
-func TestRequestWriteStatus(t *testing.T) {
-	assert := assert.New(t)
+func TestRequestWriteStatus(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// No problem
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			status, err := v.RequestWriteStatus("123456789")
-			return assert.Nil(err) && assert.Equal(4, status)
+			return t.CmpNoError(err) && t.CmpDeeply(status, 4)
 		},
 		// SOAP action
 		"RequestWriteStatus",
@@ -475,11 +483,11 @@ func TestRequestWriteStatus(t *testing.T) {
 		"RequestWriteStatus")
 
 	// With an error
-	testSendRequestAny(assert,
+	testSendRequestAny(t,
 		// Send request and check result
 		func(v *Session) bool {
 			_, err := v.RequestWriteStatus("123456789")
-			return assert.NotNil(err)
+			return t.CmpError(err)
 		},
 		// SOAP action
 		"RequestWriteStatus",

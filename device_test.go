@@ -2,8 +2,9 @@ package vitotrol
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
 const (
@@ -29,8 +30,8 @@ var (
 	}()
 )
 
-func TestFormatAttributes(t *testing.T) {
-	assert := assert.New(t)
+func TestFormatAttributes(tt *testing.T) {
+	t := td.NewT(tt)
 
 	pDevice := &Device{
 		Attributes: map[AttrID]*Value{
@@ -50,23 +51,23 @@ func TestFormatAttributes(t *testing.T) {
 		},
 	}
 
-	assert.Equal(
+	t.CmpDeeply(
+		pDevice.FormatAttributes(
+			[]AttrID{NoAttr, BurnerState, IndoorTemp, OutdoorTemp}),
 		fmt.Sprintf("%d: unknown-attr@%s\n", NoAttr, testTime)+
 			fmt.Sprintf("BurnerState: unknown-value<invalid-value>@%s (%s)\n",
 				testTime, AttributesRef[BurnerState].Doc)+
 			fmt.Sprintf("IndoorTemp: 22@%s (%s)\n",
 				testTime, AttributesRef[IndoorTemp].Doc)+
 			fmt.Sprintf("OutdoorTemp: uninitialized (%s)\n",
-				AttributesRef[OutdoorTemp].Doc),
-		pDevice.FormatAttributes(
-			[]AttrID{NoAttr, BurnerState, IndoorTemp, OutdoorTemp}))
+				AttributesRef[OutdoorTemp].Doc))
 }
 
-func TestMakeDatenpunktIDs(t *testing.T) {
-	assert := assert.New(t)
+func TestMakeDatenpunktIDs(tt *testing.T) {
+	t := td.NewT(tt)
 
-	assert.Equal(`<DatenpunktIds><int>11</int><int>22</int></DatenpunktIds>`,
-		makeDatenpunktIDs([]AttrID{11, 22}))
+	t.CmpDeeply(makeDatenpunktIDs([]AttrID{11, 22}),
+		`<DatenpunktIds><int>11</int><int>22</int></DatenpunktIds>`)
 }
 
 type requestDeviceCommon struct {
@@ -88,11 +89,13 @@ func intoDeviceResponse(action, content string) string {
 </%[1]sResponse>`, action, content)
 }
 
-func testSendRequestDeviceAny(assert *assert.Assertions,
+func testSendRequestDeviceAny(t *td.T,
 	sendReq func(v *Session, d *Device) bool, soapAction string,
 	expectedRequest interface{}, serverResponse string,
 	testName string) bool {
-	return testSendRequestAny(assert,
+	t.Helper()
+
+	return testSendRequestAny(t,
 		func(v *Session) bool {
 			v.Devices = []Device{
 				{
@@ -113,8 +116,8 @@ func testSendRequestDeviceAny(assert *assert.Assertions,
 // GetData
 //
 
-func TestGetData(t *testing.T) {
-	assert := assert.New(t)
+func TestGetData(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type requestGetData struct {
 		requestDeviceCommon
@@ -133,23 +136,24 @@ func TestGetData(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			err := d.GetData(v, []AttrID{11, 22})
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
-			return assert.Equal(map[AttrID]*Value{
-				11: {
-					Value: "value11",
-					Time:  testTime,
-				},
-				22: {
-					Value: "value22",
-					Time:  testTime,
-				},
-			}, d.Attributes)
+			return t.CmpDeeply(d.Attributes,
+				map[AttrID]*Value{
+					11: {
+						Value: "value11",
+						Time:  testTime,
+					},
+					22: {
+						Value: "value22",
+						Time:  testTime,
+					},
+				})
 		},
 		// SOAP action
 		"GetData",
@@ -173,10 +177,10 @@ func TestGetData(t *testing.T) {
 		"GetData")
 
 	// With an error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			return assert.NotNil(d.GetData(v, []AttrID{11, 22}))
+			return t.NotNil(d.GetData(v, []AttrID{11, 22}))
 		},
 		// SOAP action
 		"GetData",
@@ -218,18 +222,18 @@ var writeDataTest = testAction{
 <AktualisierungsId>123456789</AktualisierungsId>`,
 }
 
-func TestWriteData(t *testing.T) {
-	assert := assert.New(t)
+func TestWriteData(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			refreshID, err := d.WriteData(v, writeDataTestID, writeDataTestValue)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
-			return assert.Equal("123456789", refreshID)
+			return t.CmpDeeply(refreshID, "123456789")
 		},
 		// SOAP action
 		"WriteData",
@@ -239,11 +243,11 @@ func TestWriteData(t *testing.T) {
 		"WriteData")
 
 	// With an error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			_, err := d.WriteData(v, writeDataTestID, writeDataTestValue)
-			return assert.NotNil(err)
+			return t.CmpError(err)
 		},
 		// SOAP action
 		"WriteData",
@@ -280,18 +284,18 @@ var refreshDataTest = testAction{
 <AktualisierungsId>123456789</AktualisierungsId>`,
 }
 
-func TestRefreshData(t *testing.T) {
-	assert := assert.New(t)
+func TestRefreshData(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			refreshID, err := d.RefreshData(v, refreshDataTestIDs)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
-			return assert.Equal("123456789", refreshID)
+			return t.CmpDeeply(refreshID, "123456789")
 		},
 		// SOAP action
 		"RefreshData",
@@ -301,10 +305,11 @@ func TestRefreshData(t *testing.T) {
 		"RefreshData")
 
 	// With an error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			return assert.NotNil(d.RefreshData(v, refreshDataTestIDs))
+			_, err := d.RefreshData(v, refreshDataTestIDs)
+			return t.CmpError(err)
 		},
 		// SOAP action
 		"RefreshData",
@@ -314,8 +319,8 @@ func TestRefreshData(t *testing.T) {
 		"RefreshData with error")
 }
 
-func TestErrorHistoryEvent(t *testing.T) {
-	assert := assert.New(t)
+func TestErrorHistoryEvent(tt *testing.T) {
+	t := td.NewT(tt)
 
 	ehe := &ErrorHistoryEvent{
 		Error:    "EC",
@@ -326,18 +331,18 @@ func TestErrorHistoryEvent(t *testing.T) {
 
 	expectedStr := "EC@" + testTimeStr + " = Error message"
 
-	assert.Equal(expectedStr, ehe.String())
+	t.CmpDeeply(ehe.String(), expectedStr)
 
 	ehe.IsActive = true
-	assert.Equal(expectedStr+" *ACTIVE*", ehe.String())
+	t.CmpDeeply(ehe.String(), expectedStr+" *ACTIVE*")
 }
 
 //
 // GetErrorHistory
 //
 
-func TestGetErrorHistory(t *testing.T) {
-	assert := assert.New(t)
+func TestGetErrorHistory(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type requestGetErrorHistory struct {
 		requestDeviceCommon
@@ -356,26 +361,27 @@ func TestGetErrorHistory(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			if !assert.Nil(d.GetErrorHistory(v)) {
+			if !t.CmpNoError(d.GetErrorHistory(v)) {
 				return false
 			}
-			return assert.Equal([]ErrorHistoryEvent{
-				{
-					Error:    "AB",
-					Message:  "First error",
-					Time:     testTime,
-					IsActive: true,
-				},
-				{
-					Error:    "CD",
-					Message:  "Second error",
-					Time:     testTime,
-					IsActive: false,
-				},
-			}, d.Errors)
+			return t.CmpDeeply(d.Errors,
+				[]ErrorHistoryEvent{
+					{
+						Error:    "AB",
+						Message:  "First error",
+						Time:     testTime,
+						IsActive: true,
+					},
+					{
+						Error:    "CD",
+						Message:  "Second error",
+						Time:     testTime,
+						IsActive: false,
+					},
+				})
 		},
 		// SOAP action
 		"GetErrorHistory",
@@ -400,10 +406,10 @@ func TestGetErrorHistory(t *testing.T) {
 		"GetErrorHistory")
 
 	// With an error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			return assert.NotNil(d.GetErrorHistory(v))
+			return t.CmpError(d.GetErrorHistory(v))
 		},
 		// SOAP action
 		"GetErrorHistory",
@@ -417,8 +423,8 @@ func TestGetErrorHistory(t *testing.T) {
 // GetTimesheetData
 //
 
-func TestGetTimesheetData(t *testing.T) {
-	assert := assert.New(t)
+func TestGetTimesheetData(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type requestGetTimesheetData struct {
 		requestDeviceCommon
@@ -437,24 +443,25 @@ func TestGetTimesheetData(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			if !assert.Nil(d.GetTimesheetData(v, 23)) {
+			if !t.CmpNoError(d.GetTimesheetData(v, 23)) {
 				return false
 			}
-			return assert.Equal(map[string]TimeslotSlice{
-				"mon": {
-					{From: 900, To: 1011},
-					{From: 1015, To: 1222},
-					{From: 1230, To: 1345},
-				},
-				"wed": {
-					{From: 1900, To: 2011},
-					{From: 2015, To: 2222},
-					{From: 2230, To: 2345},
-				},
-			}, d.Timesheets[23])
+			return t.CmpDeeply(d.Timesheets[23],
+				map[string]TimeslotSlice{
+					"mon": {
+						{From: 900, To: 1011},
+						{From: 1015, To: 1222},
+						{From: 1230, To: 1345},
+					},
+					"wed": {
+						{From: 1900, To: 2011},
+						{From: 2015, To: 2222},
+						{From: 2230, To: 2345},
+					},
+				})
 		},
 		// SOAP action
 		"GetTimesheetData",
@@ -500,10 +507,10 @@ func TestGetTimesheetData(t *testing.T) {
 		"GetTimesheetData")
 
 	// With an error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
-			return assert.NotNil(d.GetTimesheetData(v, 23))
+			return t.CmpError(d.GetTimesheetData(v, 23))
 		},
 		// SOAP action
 		"GetTimesheetData",
@@ -517,8 +524,8 @@ func TestGetTimesheetData(t *testing.T) {
 // WriteTimesheetData
 //
 
-func TestWriteTimesheetData(t *testing.T) {
-	assert := assert.New(t)
+func TestWriteTimesheetData(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type requestDaySlot struct {
 		Day      string `xml:"Wochentag"`
@@ -568,11 +575,11 @@ func TestWriteTimesheetData(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			id, err := d.WriteTimesheetData(v, 23, inputOK)
-			return assert.Equal("123456789", id) && assert.Nil(err)
+			return t.CmpDeeply(id, "123456789") && t.CmpNoError(err)
 		},
 		// SOAP action
 		"WriteTimesheetData",
@@ -584,51 +591,51 @@ func TestWriteTimesheetData(t *testing.T) {
 		"WriteTimesheetData")
 
 	// Bad dayslot
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			id, err := d.WriteTimesheetData(v, 23, map[string]TimeslotSlice{
 				"foo": {{From: 1610, To: 1820}},
 			})
-			return assert.Empty(id) &&
-				assert.Error(err) &&
-				assert.Equal("Bad timesheet day `FOO'", err.Error())
+			return t.Empty(id) &&
+				t.CmpError(err) &&
+				t.CmpDeeply(err.Error(), "Bad timesheet day `FOO'")
 		},
 		"", nil, "", "WriteTimesheetData with bad day")
 
 	// Bad dayslot (day range)
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			id, err := d.WriteTimesheetData(v, 23, map[string]TimeslotSlice{
 				"foo-bar": {{From: 1610, To: 1820}},
 			})
-			return assert.Empty(id) &&
-				assert.Error(err) &&
-				assert.Equal("Bad timesheet range of days `FOO-BAR'", err.Error())
+			return t.Empty(id) &&
+				t.CmpError(err) &&
+				t.CmpDeeply(err.Error(), "Bad timesheet range of days `FOO-BAR'")
 		},
 		"", nil, "", "WriteTimesheetData with bad day range")
 
 	// Bad dayslot (duplicate)
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			id, err := d.WriteTimesheetData(v, 23, map[string]TimeslotSlice{
 				"mon":     {{From: 1610, To: 1820}},
 				"sun-tue": {{From: 1610, To: 1820}},
 			})
-			return assert.Empty(id) &&
-				assert.Error(err) &&
-				assert.Equal("Duplicate day `MON'", err.Error())
+			return t.Empty(id) &&
+				t.CmpError(err) &&
+				t.CmpDeeply(err.Error(), "Duplicate day `MON'")
 		},
 		"", nil, "", "WriteTimesheetData with bad day")
 
 	// Async error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			id, err := d.WriteTimesheetData(v, 23, inputOK)
-			return assert.Empty(id) && assert.Error(err)
+			return t.Empty(id) && t.CmpError(err)
 		},
 		// SOAPAction
 		"WriteTimesheetData",
@@ -642,8 +649,8 @@ func TestWriteTimesheetData(t *testing.T) {
 // GetTypeInfo
 //
 
-func TestGetTypeInfo(t *testing.T) {
-	assert := assert.New(t)
+func TestGetTypeInfo(tt *testing.T) {
+	t := td.NewT(tt)
 
 	type requestGetTypeInfo struct {
 		requestDeviceCommon
@@ -660,15 +667,15 @@ func TestGetTypeInfo(t *testing.T) {
 	}
 
 	// No problem
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			list, err := d.GetTypeInfo(v)
-			if !assert.Nil(err) || !assert.NotEmpty(list) {
+			if !t.CmpNoError(err) || !t.NotEmpty(list) {
 				return false
 			}
-			return assert.Equal([]*AttributeInfo{
-				&AttributeInfo{
+			return t.CmpDeeply(list, []*AttributeInfo{
+				{
 					AttributeInfoBase: AttributeInfoBase{
 						AttributeName:      "anzahl_brennerstunden_r",
 						AttributeType:      "Double",
@@ -683,7 +690,7 @@ func TestGetTypeInfo(t *testing.T) {
 					},
 					AttributeID: 104,
 				},
-				&AttributeInfo{
+				{
 					AttributeInfoBase: AttributeInfoBase{
 						AttributeName:      "konf_ww_solltemp_rw",
 						AttributeType:      "Integer",
@@ -698,7 +705,7 @@ func TestGetTypeInfo(t *testing.T) {
 					},
 					AttributeID: 51,
 				},
-				&AttributeInfo{
+				{
 					AttributeInfoBase: AttributeInfoBase{
 						AttributeName:      "zustand_interne_pumpe_r",
 						AttributeType:      "ENUM",
@@ -717,7 +724,7 @@ func TestGetTypeInfo(t *testing.T) {
 						1: "Ein",
 					},
 				},
-			}, list)
+			})
 		},
 		// SOAP action
 		"GetTypeInfo",
@@ -805,11 +812,11 @@ func TestGetTypeInfo(t *testing.T) {
 		"GetTypeInfo")
 
 	// With an error
-	testSendRequestDeviceAny(assert,
+	testSendRequestDeviceAny(t,
 		// Send request and check result
 		func(v *Session, d *Device) bool {
 			_, err := d.GetTypeInfo(v)
-			return assert.NotNil(err)
+			return t.CmpError(err)
 		},
 		// SOAP action
 		"GetTypeInfo",

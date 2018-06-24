@@ -1,12 +1,13 @@
 package vitotrol
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
-func TestAttrRef(t *testing.T) {
-	assert := assert.New(t)
+func TestAttrRef(tt *testing.T) {
+	t := td.NewT(tt)
 
 	ar := AttrRef{
 		Type:   TypeString,
@@ -14,41 +15,41 @@ func TestAttrRef(t *testing.T) {
 		Name:   "Foo",
 		Doc:    "Documentation...",
 	}
-	assert.Equal("Foo: Documentation... (String - read-only)", ar.String())
+	t.CmpDeeply(ar.String(), "Foo: Documentation... (String - read-only)")
 }
 
-func TestAttributesVars(t *testing.T) {
-	assert := assert.New(t)
+func TestAttributesVars(tt *testing.T) {
+	t := td.NewT(tt)
 
 	for name, aID := range AttributesNames2IDs {
 		tRef, ok := AttributesRef[aID]
-		if assert.True(ok, "AttributesRef[%d] exists", aID) {
-			assert.Equal(tRef.Name, name,
+		if t.True(ok, "AttributesRef[%d] exists", aID) {
+			t.CmpDeeply(name, tRef.Name,
 				"ID %d: same name in AttributesRef and AttributesNames2IDs", aID)
 		}
 	}
 
 	for aID, tRef := range AttributesRef {
 		aID2, ok := AttributesNames2IDs[tRef.Name]
-		if assert.True(ok, "AttributesNames2IDs[%s] exists", tRef.Name) {
-			assert.Equal(aID2, aID,
+		if t.True(ok, "AttributesNames2IDs[%s] exists", tRef.Name) {
+			t.CmpDeeply(aID, aID2,
 				tRef.Name+": same ID in AttributesRef and AttributesNames2IDs")
 		}
 	}
 
-	assert.Equal(len(AttributesRef), len(Attributes))
+	t.CmpDeeply(len(Attributes), len(AttributesRef))
 	for _, aID := range Attributes {
 		_, ok := AttributesRef[aID]
-		assert.True(ok, "ID %d of Attributes is present in AttributesRef")
+		t.True(ok, "ID %d of Attributes is present in AttributesRef")
 	}
 }
 
-func TestValue(t *testing.T) {
-	assert := assert.New(t)
+func TestValue(tt *testing.T) {
+	t := td.NewT(tt)
 
 	v := Value{Value: "34"}
-	assert.Equal(float64(34), v.Num())
+	t.CmpDeeply(v.Num(), float64(34))
 
 	v = Value{Value: "foo"}
-	assert.Equal(float64(0), v.Num())
+	t.CmpDeeply(v.Num(), float64(0))
 }

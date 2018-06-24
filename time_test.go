@@ -2,13 +2,14 @@ package vitotrol
 
 import (
 	"encoding/xml"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
-func TestTime(t *testing.T) {
-	assert := assert.New(t)
+func TestTime(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// UnmarshalXML
 	type Value struct {
@@ -24,10 +25,10 @@ func TestTime(t *testing.T) {
   <Zeitstempel>2016-10-30 22:57:18</Zeitstempel>
 </Test>`),
 		&value)
-	if assert.Nil(err) {
-		assert.Equal(
-			Time(time.Date(2016, time.October, 30, 22, 57, 18, 0, vitodataTZ)),
-			value.Time)
+	if t.CmpNoError(err) {
+		t.CmpDeeply(
+			value.Time,
+			Time(time.Date(2016, time.October, 30, 22, 57, 18, 0, vitodataTZ)))
 	}
 
 	err = xml.Unmarshal(
@@ -37,16 +38,17 @@ func TestTime(t *testing.T) {
   <Zeitstempel>
 </Test>`),
 		&value)
-	assert.NotNil(err)
+	t.CmpError(err)
 
 	// String
 	tm := Time(time.Date(2016, time.October, 30, 22, 57, 18, 0, vitodataTZ))
-	assert.Equal("2016-10-30 22:57:18", tm.String())
+	t.CmpDeeply(tm.String(), "2016-10-30 22:57:18")
 
 	tm2, err := ParseVitotrolTime("2016-10-30 22:57:18")
-	assert.Nil(err)
-	assert.Equal(tm, tm2)
+	if t.CmpNoError(err) {
+		t.CmpDeeply(tm2, tm)
+	}
 
 	_, err = ParseVitotrolTime("2016-10-30 22:57:foo")
-	assert.NotNil(err)
+	t.CmpError(err)
 }

@@ -1,139 +1,140 @@
 package vitotrol
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
-func TestVitodataDouble(t *testing.T) {
-	assert := assert.New(t)
+func TestVitodataDouble(tt *testing.T) {
+	t := td.NewT(tt)
 
-	assert.Equal("Double", TypeDouble.Type())
+	t.CmpDeeply(TypeDouble.Type(), "Double")
 
 	// Human2VitodataValue
 	str, err := TypeDouble.Human2VitodataValue("1.200")
-	assert.Equal("1.2", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "1.2")
+	t.CmpNoError(err)
 
 	str, err = TypeDouble.Human2VitodataValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2HumanValue
 	str, err = TypeDouble.Vitodata2HumanValue("1.200")
-	assert.Equal("1.2", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "1.2")
+	t.CmpNoError(err)
 
 	str, err = TypeDouble.Vitodata2HumanValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2NativeValue
 	num, err := TypeDouble.Vitodata2NativeValue("1.200")
-	assert.Equal(float64(1.2), num)
-	assert.Nil(err)
+	t.CmpDeeply(num, float64(1.2))
+	t.CmpNoError(err)
 
 	num, err = TypeDouble.Vitodata2NativeValue("foo")
-	assert.Nil(num)
-	assert.NotNil(err)
+	t.Nil(num)
+	t.CmpError(err)
 }
 
-func TestVitodataInteger(t *testing.T) {
-	assert := assert.New(t)
+func TestVitodataInteger(tt *testing.T) {
+	t := td.NewT(tt)
 
-	assert.Equal("Integer", TypeInteger.Type())
+	t.CmpDeeply(TypeInteger.Type(), "Integer")
 
 	// Human2VitodataValue
 	str, err := TypeInteger.Human2VitodataValue("12")
-	assert.Equal("12", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "12")
+	t.CmpNoError(err)
 
 	str, err = TypeInteger.Human2VitodataValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2HumanValue
 	str, err = TypeInteger.Vitodata2HumanValue("00012")
-	assert.Equal("12", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "12")
+	t.CmpNoError(err)
 
 	str, err = TypeInteger.Vitodata2HumanValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2NativeValue
 	num, err := TypeInteger.Vitodata2NativeValue("00012")
-	assert.Equal(int64(12), num)
-	assert.Nil(err)
+	t.CmpDeeply(num, int64(12))
+	t.CmpNoError(err)
 
 	num, err = TypeInteger.Vitodata2NativeValue("foo")
-	assert.Nil(num)
-	assert.NotNil(err)
+	t.Nil(num)
+	t.CmpError(err)
 }
 
-func TestVitodataDate(t *testing.T) {
-	assert := assert.New(t)
+func TestVitodataDate(tt *testing.T) {
+	t := td.NewT(tt)
 
-	assert.Equal("Date", TypeDate.Type())
+	t.CmpDeeply(TypeDate.Type(), "Date")
 
 	const refDate = "2016-09-26 11:22:33"
 
 	// Human2VitodataValue
 	str, err := TypeDate.Human2VitodataValue(refDate)
-	assert.Equal(refDate, str)
-	assert.Nil(err)
+	t.CmpDeeply(str, refDate)
+	t.CmpNoError(err)
 
 	str, err = TypeDate.Human2VitodataValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2HumanValue
 	str, err = TypeDate.Vitodata2HumanValue(refDate)
-	assert.Equal(refDate, str)
-	assert.Nil(err)
+	t.CmpDeeply(str, refDate)
+	t.CmpNoError(err)
 
 	str, err = TypeDate.Vitodata2HumanValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2NativeValue
 	date, err := TypeDate.Vitodata2NativeValue(refDate)
-	assert.Equal(
-		Time(time.Date(2016, time.September, 26, 11, 22, 33, 0, vitodataTZ)),
-		date)
-	assert.Nil(err)
+	t.CmpDeeply(
+		date,
+		Time(time.Date(2016, time.September, 26, 11, 22, 33, 0, vitodataTZ)))
+	t.CmpNoError(err)
 
 	date, err = TypeDate.Vitodata2NativeValue("foo")
-	assert.Nil(date)
-	assert.NotNil(err)
+	t.Nil(date)
+	t.CmpError(err)
 }
 
-func TestVitodataString(t *testing.T) {
-	assert := assert.New(t)
+func TestVitodataString(tt *testing.T) {
+	t := td.NewT(tt)
 
-	assert.Equal("String", TypeString.Type())
+	t.CmpDeeply(TypeString.Type(), "String")
 
 	const refString = "foobar"
 
 	// Human2VitodataValue
 	str, err := TypeString.Human2VitodataValue(refString)
-	assert.Equal(refString, str)
-	assert.Nil(err)
+	t.CmpDeeply(str, refString)
+	t.CmpNoError(err)
 
 	// Vitodata2HumanValue
 	str, err = TypeString.Vitodata2HumanValue(refString)
-	assert.Equal(refString, str)
-	assert.Nil(err)
+	t.CmpDeeply(str, refString)
+	t.CmpNoError(err)
 
 	// Vitodata2NativeValue
 	strIf, err := TypeString.Vitodata2NativeValue(refString)
-	assert.Equal(refString, strIf)
-	assert.Nil(err)
+	t.CmpDeeply(strIf, refString)
+	t.CmpNoError(err)
 }
 
-func TestVitodataEnum(t *testing.T) {
-	assert := assert.New(t)
+func TestVitodataEnum(tt *testing.T) {
+	t := td.NewT(tt)
 
 	typeEnumTest := NewEnum([]string{
 		"zero",
@@ -141,44 +142,44 @@ func TestVitodataEnum(t *testing.T) {
 		"two",
 	})
 
-	assert.Equal("Enum3", typeEnumTest.Type())
+	t.CmpDeeply(typeEnumTest.Type(), "Enum3")
 
 	// Human2VitodataValue
 	str, err := typeEnumTest.Human2VitodataValue("one")
-	assert.Equal("1", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "1")
+	t.CmpNoError(err)
 
 	str, err = typeEnumTest.Human2VitodataValue("1")
-	assert.Equal("1", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "1")
+	t.CmpNoError(err)
 
 	str, err = typeEnumTest.Human2VitodataValue("foo")
-	assert.Equal("", str)
-	assert.NotNil(err)
+	t.Empty(str)
+	t.CmpError(err)
 
 	// Vitodata2HumanValue
 	str, err = typeEnumTest.Vitodata2HumanValue("2")
-	assert.Equal("two", str)
-	assert.Nil(err)
+	t.CmpDeeply(str, "two")
+	t.CmpNoError(err)
 
 	str, err = typeEnumTest.Vitodata2HumanValue("42")
-	assert.Equal("", str)
-	assert.Equal(ErrEnumInvalidValue, err)
+	t.Empty(str)
+	t.CmpDeeply(err, ErrEnumInvalidValue)
 
 	str, err = typeEnumTest.Vitodata2HumanValue("foo")
-	assert.Equal("", str)
-	assert.Equal(ErrEnumInvalidValue, err)
+	t.Empty(str)
+	t.CmpDeeply(err, ErrEnumInvalidValue)
 
 	// Vitodata2NativeValue
 	num, err := typeEnumTest.Vitodata2NativeValue("1")
-	assert.Equal(uint64(1), num)
-	assert.Nil(err)
+	t.CmpDeeply(num, uint64(1))
+	t.CmpNoError(err)
 
 	num, err = typeEnumTest.Vitodata2NativeValue("42")
-	assert.Nil(num)
-	assert.Equal(ErrEnumInvalidValue, err)
+	t.Nil(num)
+	t.CmpDeeply(err, ErrEnumInvalidValue)
 
 	num, err = typeEnumTest.Vitodata2NativeValue("foo")
-	assert.Nil(num)
-	assert.Equal(ErrEnumInvalidValue, err)
+	t.Nil(num)
+	t.CmpDeeply(err, ErrEnumInvalidValue)
 }

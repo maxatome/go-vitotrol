@@ -2,12 +2,13 @@ package vitotrol
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
 type testAction struct {
@@ -15,27 +16,27 @@ type testAction struct {
 	serverResponse  string
 }
 
-func testSendRequestAnyMulti(assert *assert.Assertions,
+func testSendRequestAnyMulti(t *td.T,
 	sendReqs func(v *Session, d *Device) bool,
 	actions map[string]*testAction, testName string) bool {
 	ts := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			soapActionURL := r.Header.Get("SOAPAction")
-			if !assert.NotEmpty(soapActionURL,
+			if !t.NotEmpty(soapActionURL,
 				"%s: SOAPAction header found", testName) {
 				w.WriteHeader(http.StatusNotAcceptable)
 				return
 			}
 			soapAction := soapActionURL[strings.LastIndex(soapActionURL, "/")+1:]
 			pAction := actions[soapAction]
-			if !assert.NotNil(pAction,
+			if !t.NotNil(pAction,
 				"%s: SOAPAction header `%s' matches one expected action",
 				testName, soapAction) {
 				w.WriteHeader(http.StatusNotAcceptable)
 				return
 			}
 
-			assert.Equal("text/xml; charset=utf-8", r.Header.Get("Content-Type"),
+			t.CmpDeeply(r.Header.Get("Content-Type"), "text/xml; charset=utf-8",
 				"%s: Content-Type header matches", testName)
 
 			if cookie := r.Header.Get("Cookie"); cookie != "" {
@@ -44,11 +45,11 @@ func testSendRequestAnyMulti(assert *assert.Assertions,
 
 			// Extract request body in the same struct type as the expectedRequest
 			recvReq := virginInstance(pAction.expectedRequest)
-			if !extractRequestBody(assert, r, recvReq, testName) {
+			if !extractRequestBody(t, r, recvReq, testName) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			assert.Equal(pAction.expectedRequest, recvReq, "%s: request OK", testName)
+			t.CmpDeeply(recvReq, pAction.expectedRequest, "%s: request OK", testName)
 
 			// Send response
 			fmt.Fprintln(w, respHeader+pAction.serverResponse+respFooter)
@@ -73,16 +74,16 @@ func testSendRequestAnyMulti(assert *assert.Assertions,
 // WriteDataWait
 //
 
-func TestWriteDataWait(t *testing.T) {
-	assert := assert.New(t)
+func TestWriteDataWait(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// No problem
-	testSendRequestAnyMulti(assert,
+	testSendRequestAnyMulti(t,
 		func(v *Session, d *Device) bool {
 			WriteDataWaitDuration = 0
 			WriteDataWaitMinDuration = 0
 			ch, err := d.WriteDataWait(v, writeDataTestID, writeDataTestValue)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
 			timeoutTicker := time.NewTicker(100 * time.Millisecond)
@@ -90,9 +91,10 @@ func TestWriteDataWait(t *testing.T) {
 
 			select {
 			case err = <-ch:
-				return assert.Nil(err)
+				return t.CmpNoError(err)
 			case <-timeoutTicker.C:
-				return assert.Fail("TIMEOUT!")
+				t.Error("TIMEOUT!")
+				return false
 			}
 		},
 		map[string]*testAction{
@@ -106,12 +108,12 @@ func TestWriteDataWait(t *testing.T) {
 		"WriteDataWait")
 
 	// Error during WriteData
-	testSendRequestAnyMulti(assert,
+	testSendRequestAnyMulti(t,
 		func(v *Session, d *Device) bool {
 			WriteDataWaitDuration = 0
 			ch, err := d.WriteDataWait(v, writeDataTestID, writeDataTestValue)
-			assert.NotNil(err)
-			return assert.Nil(ch)
+			t.CmpError(err)
+			return t.Nil(ch)
 		},
 		map[string]*testAction{
 			"WriteData": {
@@ -123,10 +125,10 @@ func TestWriteDataWait(t *testing.T) {
 		"WriteDataWait, error during WriteData")
 
 	// Error during RequestWriteStatus
-	testSendRequestAnyMulti(assert,
+	testSendRequestAnyMulti(t,
 		func(v *Session, d *Device) bool {
 			ch, err := d.WriteDataWait(v, writeDataTestID, writeDataTestValue)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
 			timeoutTicker := time.NewTicker(100 * time.Millisecond)
@@ -134,9 +136,10 @@ func TestWriteDataWait(t *testing.T) {
 
 			select {
 			case err = <-ch:
-				return assert.NotNil(err)
+				return t.CmpError(err)
 			case <-timeoutTicker.C:
-				return assert.Fail("TIMEOUT!")
+				t.Error("TIMEOUT!")
+				return false
 			}
 		},
 		map[string]*testAction{
@@ -157,16 +160,16 @@ func TestWriteDataWait(t *testing.T) {
 // RefreshDataWait
 //
 
-func TestRefreshDataWait(t *testing.T) {
-	assert := assert.New(t)
+func TestRefreshDataWait(tt *testing.T) {
+	t := td.NewT(tt)
 
 	// No problem
-	testSendRequestAnyMulti(assert,
+	testSendRequestAnyMulti(t,
 		func(v *Session, d *Device) bool {
 			RefreshDataWaitDuration = 0
 			RefreshDataWaitMinDuration = 0
 			ch, err := d.RefreshDataWait(v, refreshDataTestIDs)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
 			timeoutTicker := time.NewTicker(100 * time.Millisecond)
@@ -174,9 +177,10 @@ func TestRefreshDataWait(t *testing.T) {
 
 			select {
 			case err = <-ch:
-				return assert.Nil(err)
+				return t.CmpNoError(err)
 			case <-timeoutTicker.C:
-				return assert.Fail("TIMEOUT!")
+				t.Error("TIMEOUT!")
+				return false
 			}
 		},
 		map[string]*testAction{
@@ -190,12 +194,12 @@ func TestRefreshDataWait(t *testing.T) {
 		"RefreshDataWait")
 
 	// Error during RefreshData
-	testSendRequestAnyMulti(assert,
+	testSendRequestAnyMulti(t,
 		func(v *Session, d *Device) bool {
 			RefreshDataWaitDuration = 0
 			ch, err := d.RefreshDataWait(v, refreshDataTestIDs)
-			assert.NotNil(err)
-			return assert.Nil(ch)
+			t.CmpError(err)
+			return t.Nil(ch)
 		},
 		map[string]*testAction{
 			"RefreshData": {
@@ -207,10 +211,10 @@ func TestRefreshDataWait(t *testing.T) {
 		"RefreshDataWait, error during RefreshData")
 
 	// Error during RequestRefreshStatus
-	testSendRequestAnyMulti(assert,
+	testSendRequestAnyMulti(t,
 		func(v *Session, d *Device) bool {
 			ch, err := d.RefreshDataWait(v, refreshDataTestIDs)
-			if !assert.Nil(err) {
+			if !t.CmpNoError(err) {
 				return false
 			}
 			timeoutTicker := time.NewTicker(100 * time.Millisecond)
@@ -218,9 +222,10 @@ func TestRefreshDataWait(t *testing.T) {
 
 			select {
 			case err = <-ch:
-				return assert.NotNil(err)
+				return t.CmpError(err)
 			case <-timeoutTicker.C:
-				return assert.Fail("TIMEOUT!")
+				t.Error("TIMEOUT!")
+				return false
 			}
 		},
 		map[string]*testAction{

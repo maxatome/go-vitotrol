@@ -1,35 +1,36 @@
 package vitotrol
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	td "github.com/maxatome/go-testdeep"
 )
 
-func TestTimesheetRef(t *testing.T) {
-	assert := assert.New(t)
+func TestTimesheetRef(tt *testing.T) {
+	t := td.NewT(tt)
 
 	tsr := TimesheetRef{
 		Name: "Foo",
 		Doc:  "Documentation...",
 	}
-	assert.Equal("Foo: Documentation...", tsr.String())
+	t.CmpDeeply(tsr.String(), "Foo: Documentation...")
 }
 
-func TestTimesheetsVars(t *testing.T) {
-	assert := assert.New(t)
+func TestTimesheetsVars(tt *testing.T) {
+	t := td.NewT(tt)
 
 	for name, tID := range TimesheetsNames2IDs {
 		tRef, ok := TimesheetsRef[tID]
-		if assert.True(ok, "TimesheetsRef[%d] exists", tID) {
-			assert.Equal(tRef.Name, name,
+		if t.True(ok, "TimesheetsRef[%d] exists", tID) {
+			t.CmpDeeply(name, tRef.Name,
 				"ID %d: same name in TimesheetsRef and TimesheetsNames2IDs", tID)
 		}
 	}
 
 	for tID, tRef := range TimesheetsRef {
 		tID2, ok := TimesheetsNames2IDs[tRef.Name]
-		if assert.True(ok, "TimesheetsNames2IDs[%s] exists", tRef.Name) {
-			assert.Equal(tID2, tID,
+		if t.True(ok, "TimesheetsNames2IDs[%s] exists", tRef.Name) {
+			t.CmpDeeply(tID, tID2,
 				tRef.Name+": same ID in TimesheetsRef and TimesheetsNames2IDs")
 		}
 	}
