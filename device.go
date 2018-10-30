@@ -587,12 +587,15 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 // GetTypeInfo
 //
 
+// AttributeInfo defines an attribute.
 type AttributeInfo struct {
 	AttributeInfoBase
 	AttributeID AttrID
 	EnumValues  map[uint32]string // only if AttributeType == "ENUM"
 }
 
+// AttributeInfoBase defines the base information the GetTypeInfo
+// request returns.
 type AttributeInfoBase struct {
 	AttributeName      string `xml:"DatenpunktName"` // German one, more funny :)
 	AttributeType      string `xml:"DatenpunktTyp"`
@@ -611,6 +614,7 @@ type attributeInfo struct {
 	AttributeID string `xml:"DatenpunktId"`
 }
 
+// GetTypeInfoResponse is a response to a GetTypeInfo request.
 type GetTypeInfoResponse struct {
 	GetTypeInfoResult struct {
 		ResultHeader
