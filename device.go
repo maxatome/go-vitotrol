@@ -77,7 +77,7 @@ func (d *Device) sendRequest(v *Session, soapAction string, reqBody string, resp
 //
 
 type getDataValue struct {
-	ID    uint16 `xml:"DatenpunktId"`
+	ID    uint32 `xml:"DatenpunktId"`
 	Value string `xml:"Wert"`
 	Time  Time   `xml:"Zeitstempel"`
 }

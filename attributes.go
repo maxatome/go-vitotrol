@@ -13,6 +13,7 @@ type AttrID uint16
 const (
 	IndoorTemp             AttrID = 5367   // temp_rts_r
 	OutdoorTemp            AttrID = 5373   // temp_ats_r
+	SmokeTemp              AttrID = 5372   // temp_agt_r
 	BoilerTemp             AttrID = 5374   // temp_kts_r
 	HotWaterTemp           AttrID = 5381   // temp_ww_r
 	HotWaterOutTemp        AttrID = 5382   // temp_auslauf_r
@@ -61,10 +62,11 @@ var AccessToStr = map[AttrAccess]string{
 
 // An AttrRef describes an attribute reference: its type, access and name.
 type AttrRef struct {
-	Type   VitodataType
-	Access AttrAccess
-	Name   string
-	Doc    string
+	Type         VitodataType
+	Access       AttrAccess
+	Name         string
+	VitotrolName string
+	Doc          string
 }
 
 // String returns all information contained in this attribute reference.
@@ -86,6 +88,12 @@ var AttributesRef = map[AttrID]*AttrRef{
 		Access: ReadOnly,
 		Doc:    "Outdoor temperature",
 		Name:   "OutdoorTemp",
+	},
+	SmokeTemp: {
+		Type:   TypeDouble,
+		Access: ReadOnly,
+		Doc:    "Smoke temperature",
+		Name:   "SmokeTemp",
 	},
 	BoilerTemp: {
 		Type:   TypeDouble,
