@@ -62,11 +62,11 @@ var AccessToStr = map[AttrAccess]string{
 
 // An AttrRef describes an attribute reference: its type, access and name.
 type AttrRef struct {
-	Type         VitodataType
-	Access       AttrAccess
-	Name         string
-	VitotrolName string
-	Doc          string
+	Type   VitodataType
+	Access AttrAccess
+	Name   string
+	Doc    string
+	Custom bool
 }
 
 // String returns all information contained in this attribute reference.
@@ -274,24 +274,41 @@ var AttributesRef = map[AttrID]*AttrRef{
 	},
 }
 
-// AttributesNames2IDs maps the attributes names to their AttrID
-// counterpart.
-var AttributesNames2IDs = func() map[string]AttrID {
+// AddAttributeRef adds a new attribute to the "official" list. This
+// new attribute will only differ from others by its Custom field set
+// to true.
+//
+// No check is done to avoid overriding existing attributes.
+func AddAttributeRef(attrID AttrID, ref AttrRef) {
+	ref.Custom = true
+	AttributesRef[attrID] = &ref
+
+	AttributesNames2IDs = computeNames2IDs()
+	Attributes = computeAttributes()
+}
+
+func computeNames2IDs() map[string]AttrID {
 	ret := make(map[string]AttrID, len(AttributesRef))
 	for attrID, pAttrRef := range AttributesRef {
 		ret[pAttrRef.Name] = attrID
 	}
 	return ret
-}()
+}
 
-// Attributes lists the AttrIDs for all available attributes.
-var Attributes = func() []AttrID {
+func computeAttributes() []AttrID {
 	ret := make([]AttrID, 0, len(AttributesRef))
 	for attrID := range AttributesRef {
 		ret = append(ret, attrID)
 	}
 	return ret
-}()
+}
+
+// AttributesNames2IDs maps the attributes names to their AttrID
+// counterpart.
+var AttributesNames2IDs = computeNames2IDs()
+
+// Attributes lists the AttrIDs for all available attributes.
+var Attributes = computeAttributes()
 
 // Value is the timestamped value of an attribute.
 type Value struct {
