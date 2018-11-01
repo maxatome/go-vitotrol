@@ -42,6 +42,24 @@ func TestAttributesVars(tt *testing.T) {
 		_, ok := AttributesRef[aID]
 		t.True(ok, "ID %d of Attributes is present in AttributesRef")
 	}
+
+	// Add custom attribute
+	require := t.FailureIsFatal()
+
+	require.CmpDeeply(AttributesRef, td.Not(td.ContainsKey(9999)))
+
+	AddAttributeRef(9999, AttrRef{
+		Type:   TypeDouble,
+		Access: ReadOnly,
+		Name:   "FooBar",
+	})
+
+	require.CmpDeeply(AttributesRef, td.ContainsKey(AttrID(9999)))
+
+	t.CmpDeeply(AttributesNames2IDs["FooBar"], AttrID(9999))
+	t.CmpDeeply(Attributes, td.Contains(AttrID(9999)))
+
+	t.True(AttributesRef[AttrID(9999)].Custom)
 }
 
 func TestValue(tt *testing.T) {
