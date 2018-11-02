@@ -44,13 +44,13 @@ See `cmd/vitotrol/*.go` for an example of use.
 Executable `vitotrol` usage follows:
 
 ```
-usage: ./vitotrol [OPTIONS] ACTION [PARAMS]
+usage: vitotrol [OPTIONS] ACTION [PARAMS]
   -config string
         login+password config file
   -debug
         print debug information
   -device string
-        DeviceID, index, DeviceName, DeviceId@LocationID, DeviceName@LocationName (see `devices' action)
+        DeviceID, index, DeviceName, DeviceId@LocationID, DeviceName@LocationName (see `devices' action) (default "0")
   -json
         used by `timesheet' action to display timesheets using JSON format
   -login string
@@ -69,6 +69,12 @@ ACTION & PARAMS can be:
 - rget ATTR_NAME ...   refresh then get the value of attributes ATTR_NAME, ...
                          on vitodata server
 - rget all             refresh than get all known attributes on vitodata server
+- bget ATTR_IDX ...    get the value of attributes ATTR_IDX, ... on vitodata
+                         server without checking their validity before (for
+                         developing purpose)
+- rbget ATTR_IDX ...   refresh then get the value of attributes ATTR_IDX, ...
+                         on vitodata server without checking their validity
+                         before (for developing purpose)
 - set ATTR_NAME VALUE  set the value of attribute ATTR_NAME to VALUE
 - timesheet TIMESHEET ...
                        get the timesheet TIMESHEET data
@@ -78,6 +84,8 @@ ACTION & PARAMS can be:
                        (eg. mon-wed or sat-mon)
                        The JSON content can be in a file with the syntax @file
 - errors               get the error history
+- remote_attrs         list server available attributes
+                         (for developing purpose)
 ```
 
 The config file is a two lines file containing the LOGIN on the first
