@@ -93,3 +93,9 @@ PASSWORD
 ## License
 
 go-vitotrol is released under the MIT License.
+
+
+## Miscellaneous
+
+Want to automatically feed an Influx database with attribute values?
+See [vitotrol2influx](https://github.com/maxatome/vitotrol2influx).
