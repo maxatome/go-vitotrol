@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// An AttrID defines an attribute ID
+// An AttrID defines an attribute ID.
 type AttrID uint16
 
 // Attribute IDs currently supported by the library. For each, the
