@@ -12,14 +12,12 @@ import (
 	td "github.com/maxatome/go-testdeep"
 )
 
-var (
-	_ = []HasResultHeader{
-		(*LoginResponse)(nil),
-		(*GetDevicesResponse)(nil),
-		(*RequestRefreshStatusResponse)(nil),
-		(*RequestWriteStatusResponse)(nil),
-	}
-)
+var _ = []HasResultHeader{
+	(*LoginResponse)(nil),
+	(*GetDevicesResponse)(nil),
+	(*RequestRefreshStatusResponse)(nil),
+	(*RequestWriteStatusResponse)(nil),
+}
 
 const (
 	respHeader = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema"><soap:Body>`
@@ -35,11 +33,7 @@ func extractRequestBody(t *td.T, r *http.Request, reqBody interface{}, testName 
 	}
 
 	err = xml.Unmarshal(bodyRaw, reqBody)
-	if !t.CmpNoError(err, "%s: request body Unmarshal OK", testName) {
-		return false
-	}
-
-	return true
+	return t.CmpNoError(err, "%s: request body Unmarshal OK", testName)
 }
 
 func virginInstance(pOrig interface{}) interface{} {
@@ -121,7 +115,6 @@ func TestSendRequestErrors(tt *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}))
 	defer ts.Close()
 
@@ -244,7 +237,7 @@ func TestSendRequest(tt *testing.T) {
 }
 
 //
-// Login
+// Login.
 //
 func TestLogin(tt *testing.T) {
 	t := td.NewT(tt)
@@ -302,7 +295,7 @@ func TestLogin(tt *testing.T) {
 }
 
 //
-// GetDevices
+// GetDevices.
 //
 func TestGetDevices(tt *testing.T) {
 	t := td.NewT(tt)

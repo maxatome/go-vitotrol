@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/maxatome/go-vitotrol"
 	"io/ioutil"
 	"strconv"
 	"strings"
+
+	"github.com/maxatome/go-vitotrol"
 )
 
 func existTimesheetName(tsName string) (vitotrol.TimesheetID, error) {
@@ -74,7 +75,7 @@ func (a *authAction) initVitotrol(pOptions *Options) error {
 			// Check if a device exists with this ID
 			for _, device := range v.Devices {
 				if uint32(idx) == device.DeviceID {
-					pDevice = &device
+					pDevice = &device //nolint: exportloopref
 					break
 				}
 			}
@@ -95,7 +96,7 @@ func (a *authAction) initVitotrol(pOptions *Options) error {
 			// Check if a device exists with this name
 			for _, device := range v.Devices {
 				if pOptions.device == device.DeviceName {
-					pDevice = &device
+					pDevice = &device //nolint: exportloopref
 					break
 				}
 
@@ -104,13 +105,13 @@ func (a *authAction) initVitotrol(pOptions *Options) error {
 					// DeviceId@LocationID
 					if pOptions.device == fmt.Sprintf("%d@%d",
 						device.DeviceID, device.LocationID) {
-						pDevice = &device
+						pDevice = &device //nolint: exportloopref
 						break
 					}
 
 					// DeviceName@LocationName
 					if pOptions.device == device.DeviceName+"@"+device.LocationName {
-						pDevice = &device
+						pDevice = &device //nolint: exportloopref
 						break
 					}
 				}
@@ -384,8 +385,7 @@ func (a *setAction) Do(pOptions *Options, params []string) error {
 			return err
 		}
 
-		value, err :=
-			vitotrol.AttributesRef[attrID].Type.Human2VitodataValue(params[idx+1])
+		value, err := vitotrol.AttributesRef[attrID].Type.Human2VitodataValue(params[idx+1])
 		if err != nil {
 			return fmt.Errorf("value `%s' of attribute %s is invalid: %s",
 				params[idx+1], params[idx], err)

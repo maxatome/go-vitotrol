@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// Device represents one Vitotrol™ device (a priori a boiler)
+// Device represents one Vitotrol™ device (a priori a boiler).
 type Device struct {
 	LocationID   uint32 // Vitotrol™ ID of location (AnlageId field)
 	LocationName string // location name (AnlageName field)
@@ -36,7 +36,7 @@ func (d *Device) FormatAttributes(attrs []AttrID) string {
 
 	pConcatFun := func(attrID AttrID, pValue *Value) {
 		pRef := AttributesRef[attrID]
-		if pRef == nil {
+		if pRef == nil { //nolint: gocritic
 			buf.WriteString(
 				fmt.Sprintf("%d: %s@%s\n", attrID, pValue.Value, pValue.Time))
 		} else if pValue != nil {
@@ -387,6 +387,7 @@ var timesheetDays = []string{
 	"SAT",
 	"SUN",
 }
+
 var timesheetDaysIdx = func() map[string]int {
 	tss := make(map[string]int, 7)
 	for idx, day := range timesheetDays {
@@ -532,12 +533,10 @@ func (d *Device) WriteTimesheetDataWait(v *Session, id TimesheetID, data map[str
 	return ch, nil
 }
 
-var (
-	// ErrTimeout is the error returned by WriteDataWait,
-	// RefreshDataWait and WriteTimesheetDataWait methods when the
-	// response wait times out.
-	ErrTimeout = errors.New("Timeout")
-)
+// ErrTimeout is the error returned by WriteDataWait,
+// RefreshDataWait and WriteTimesheetDataWait methods when the
+// response wait times out.
+var ErrTimeout = errors.New("Timeout")
 
 func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 	requestStatus func(*Session, string) (int, error),
@@ -578,8 +577,7 @@ func waitAsyncStatus(v *Session, refreshID string, ch chan error,
 		}
 	}
 	if v.Debug {
-		log.Printf("waitAsyncStatus(%s) done in %s",
-			refreshID, time.Now().Sub(start))
+		log.Printf("waitAsyncStatus(%s) done in %s", refreshID, time.Since(start))
 	}
 	close(ch)
 }
@@ -636,10 +634,6 @@ func (d *Device) GetTypeInfo(v *Session) ([]*AttributeInfo, error) {
 		return nil, err
 	}
 
-	type enumKey struct {
-		attrID   string
-		deviceID uint32
-	}
 	enumAttrs := map[string]*AttributeInfo{}
 	list := make([]*AttributeInfo, 0, len(resp.GetTypeInfoResult.Attributes)/2)
 

@@ -43,7 +43,6 @@ func (v *Session) sendRequest(soapAction string, reqBody string, respBody HasRes
 		return err
 	}
 
-	//req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("SOAPAction", soapURL+soapAction)
 	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
 	for _, cookie := range v.Cookies {
