@@ -25,17 +25,29 @@ Any pull-request is welcome.
 
 ## Install
 
-The library:
+### The `vitotrol` command
+
+To obtain a `vitotrol` executable in `$GOPATH/bin/` directory if
+`GOPATH` environment variable exists or in `$HOME/go/bin` otherwise:
+
+#### starting go 1.18
+
 ```
-go get -u github.com/maxatome/go-vitotrol
+go install github.com/maxatome/go-vitotrol/cmd/vitotrol@master
 ```
 
-The vitotrol command:
+#### before go 1.18
+
 ```
 go get -u github.com/maxatome/go-vitotrol/cmd/vitotrol
 ```
 
-resulting a `vitotrol` executable in `$GOPATH/bin/` directory.
+### The library
+```
+go get -u github.com/maxatome/go-vitotrol
+```
+
+`-u` became useless since go 1.18.
 
 ## Example
 
