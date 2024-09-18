@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Singletons matching Vitodata™ types.
@@ -56,19 +57,23 @@ func (v *VitodataDouble) Human2VitodataValue(value string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strconv.FormatFloat(num, 'f', -1, 64), nil
+	return strings.Replace(strconv.FormatFloat(num, 'f', -1, 64), ".", ",", 1), nil
 }
 
 // Vitodata2HumanValue checks that the value is a float number and
 // returns it after reformatting.
 func (v *VitodataDouble) Vitodata2HumanValue(value string) (string, error) {
-	return v.Human2VitodataValue(value)
+	num, err := strconv.ParseFloat(strings.Replace(value, ",", ".", 1), 64)
+	if err != nil {
+		return "", err
+	}
+	return strconv.FormatFloat(num, 'f', -1, 64), nil
 }
 
 // Vitodata2NativeValue extract the number from the passed string and
 // returns it as a float64.
 func (v *VitodataDouble) Vitodata2NativeValue(value string) (interface{}, error) {
-	num, err := strconv.ParseFloat(value, 64)
+	num, err := strconv.ParseFloat(strings.Replace(value, ",", ".", 1), 64)
 	if err != nil {
 		return nil, err
 	}
