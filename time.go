@@ -25,7 +25,9 @@ func (t *Time) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 }
 
 // String returns the time formatted using the format string
+//
 //	2006-01-02 15:04:05
+//
 // considered as being a localtime value.
 func (t Time) String() string {
 	return time.Time(t).Format(vitodataTimeFormat)

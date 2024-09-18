@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"sort"
@@ -55,7 +55,7 @@ func (v *Session) sendRequest(soapAction string, reqBody string, respBody HasRes
 	}
 	defer resp.Body.Close()
 
-	respBodyRaw, _ := ioutil.ReadAll(resp.Body)
+	respBodyRaw, _ := io.ReadAll(resp.Body)
 
 	if resp.StatusCode == 200 {
 		cookies := resp.Header[http.CanonicalHeaderKey("Set-Cookie")]

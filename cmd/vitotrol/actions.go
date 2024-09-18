@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -239,7 +239,7 @@ type devicesAction struct {
 	authAction
 }
 
-func (a *devicesAction) Do(pOptions *Options, params []string) error {
+func (a *devicesAction) Do(pOptions *Options, _ []string) error {
 	err := a.initVitotrol(pOptions)
 	if err != nil {
 		return err
@@ -267,7 +267,7 @@ func (a *listAction) NeedAuth() bool {
 	return false
 }
 
-func (a *listAction) Do(pOptions *Options, params []string) error {
+func (a *listAction) Do(_ *Options, params []string) error {
 	if len(params) == 0 || params[0] == "attrs" {
 		for _, pAttrRef := range vitotrol.AttributesRef {
 			fmt.Println(pAttrRef)
@@ -419,7 +419,7 @@ type errorsAction struct {
 	authAction
 }
 
-func (a *errorsAction) Do(pOptions *Options, params []string) error {
+func (a *errorsAction) Do(pOptions *Options, _ []string) error {
 	err := a.initVitotrol(pOptions)
 	if err != nil {
 		return err
@@ -465,7 +465,7 @@ func (a *setTimesheetAction) Do(pOptions *Options, params []string) error {
 	tss := make(map[string]vitotrol.TimeslotSlice)
 	var data []byte
 	if strings.HasPrefix(params[1], "@") && len(params[1]) > 1 {
-		data, err = ioutil.ReadFile(params[1][1:])
+		data, err = os.ReadFile(params[1][1:])
 		if err != nil {
 			return fmt.Errorf("Cannot read file %s: %s", params[1][1:], err)
 		}
@@ -548,7 +548,7 @@ type remoteAttrsAction struct {
 	authAction
 }
 
-func (a *remoteAttrsAction) Do(pOptions *Options, params []string) error {
+func (a *remoteAttrsAction) Do(pOptions *Options, _ []string) error {
 	err := a.initVitotrol(pOptions)
 	if err != nil {
 		return err
