@@ -14,7 +14,7 @@ func TestVitodataDouble(tt *testing.T) {
 
 	// Human2VitodataValue
 	str, err := TypeDouble.Human2VitodataValue("1.200")
-	t.CmpDeeply(str, "1.2")
+	t.CmpDeeply(str, "1,2")
 	t.CmpNoError(err)
 
 	str, err = TypeDouble.Human2VitodataValue("foo")
@@ -26,12 +26,20 @@ func TestVitodataDouble(tt *testing.T) {
 	t.CmpDeeply(str, "1.2")
 	t.CmpNoError(err)
 
+	str, err = TypeDouble.Vitodata2HumanValue("1,200")
+	t.CmpDeeply(str, "1.2")
+	t.CmpNoError(err)
+
 	str, err = TypeDouble.Vitodata2HumanValue("foo")
 	t.Empty(str)
 	t.CmpError(err)
 
 	// Vitodata2NativeValue
 	num, err := TypeDouble.Vitodata2NativeValue("1.200")
+	t.CmpDeeply(num, float64(1.2))
+	t.CmpNoError(err)
+
+	num, err = TypeDouble.Vitodata2NativeValue("1,200")
 	t.CmpDeeply(num, float64(1.2))
 	t.CmpNoError(err)
 
