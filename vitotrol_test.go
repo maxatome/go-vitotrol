@@ -3,7 +3,7 @@ package vitotrol
 import (
 	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -27,7 +27,7 @@ const (
 func extractRequestBody(t *td.T, r *http.Request, reqBody interface{}, testName string) bool {
 	t.Helper()
 
-	bodyRaw, err := ioutil.ReadAll(r.Body)
+	bodyRaw, err := io.ReadAll(r.Body)
 	if !t.CmpNoError(err, "%s: request body ReadAll OK", testName) {
 		return false
 	}
@@ -45,7 +45,8 @@ func virginInstance(pOrig interface{}) interface{} {
 func testSendRequestAny(t *td.T,
 	sendReq func(v *Session) bool, soapAction string,
 	expectedRequest interface{}, serverResponse string,
-	testName string) bool {
+	testName string,
+) bool {
 	t.Helper()
 
 	ts := httptest.NewServer(http.HandlerFunc(
@@ -113,7 +114,7 @@ func TestSendRequestErrors(tt *testing.T) {
 
 	// HTTP status error
 	ts := httptest.NewServer(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+		func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 	defer ts.Close()
@@ -236,9 +237,7 @@ func TestSendRequest(tt *testing.T) {
 		"sendRequest app error")
 }
 
-//
 // Login.
-//
 func TestLogin(tt *testing.T) {
 	t := td.NewT(tt)
 
@@ -294,9 +293,7 @@ func TestLogin(tt *testing.T) {
 		"Login with error")
 }
 
-//
 // GetDevices.
-//
 func TestGetDevices(tt *testing.T) {
 	t := td.NewT(tt)
 
