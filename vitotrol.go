@@ -11,7 +11,7 @@ import (
 )
 
 // MainURL is the Viessmann Vitodata API URL.
-var MainURL = `https://www.viessmann.com/app_vitodata/VIIWebService-1.16.0.0/iPhoneWebService.asmx`
+var MainURL = `https://vitotrolapp.viessmann-climatesolutions.com/app_vitodata/VIIWebService-1.16.0.0/iPhoneWebService.asmx`
 
 const (
 	soapURL = `http://www.e-controlnet.de/services/vii/`
